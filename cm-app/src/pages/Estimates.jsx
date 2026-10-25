@@ -26,8 +26,7 @@ import {
   formatINR,
   percent,
 } from '../utils/costs';
-
-const PIE_COLORS = { Material: '#1D4E89', Labor: '#E8792D', Overhead: '#0F766E' };
+import { CHART_COLORS, PIE_COLORS, AXIS_TICK, TOOLTIP_STYLE, BAR_RADIUS } from '../utils/chartTheme';
 
 export default function Estimates() {
   const { state } = useApp();
@@ -100,13 +99,13 @@ export default function Estimates() {
           <div className="chart-box">
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={estimateVsBudget} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E3E6EA" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis tickFormatter={(v) => formatCompact(v)} tick={{ fontSize: 12 }} width={64} />
-                <Tooltip formatter={(v) => formatINR(v)} />
+                <CartesianGrid vertical={false} stroke={CHART_COLORS.grid} />
+                <XAxis dataKey="name" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={(v) => formatCompact(v)} tick={AXIS_TICK} axisLine={false} tickLine={false} width={64} />
+                <Tooltip formatter={(v) => formatINR(v)} contentStyle={TOOLTIP_STYLE} cursor={{ fill: CHART_COLORS.grid }} />
                 <Legend />
-                <Bar dataKey="Budget" fill="#8AA9C9" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Estimate" fill="#1D4E89" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Budget" fill={CHART_COLORS.muted} radius={BAR_RADIUS} />
+                <Bar dataKey="Estimate" fill={CHART_COLORS.primary} radius={BAR_RADIUS} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -120,12 +119,12 @@ export default function Estimates() {
             <div className="chart-box">
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
-                  <Pie data={portfolioBreakdown} dataKey="value" nameKey="name" outerRadius={95} label>
+                  <Pie data={portfolioBreakdown} dataKey="value" nameKey="name" outerRadius={95} innerRadius={55} paddingAngle={2} stroke="none" label>
                     {portfolioBreakdown.map((d) => (
                       <Cell key={d.name} fill={PIE_COLORS[d.name]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v) => formatINR(v)} />
+                  <Tooltip formatter={(v) => formatINR(v)} contentStyle={TOOLTIP_STYLE} cursor={{ fill: CHART_COLORS.grid }} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>

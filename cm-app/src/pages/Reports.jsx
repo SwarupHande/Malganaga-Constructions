@@ -16,8 +16,7 @@ import {
 } from 'recharts';
 import { useApp } from '../context/AppContext';
 import { projectCostSummary, dailyLaborCostSeries, formatINR } from '../utils/costs';
-
-const PIE_COLORS = { Material: '#1D4E89', Labor: '#E8792D', Overhead: '#0F766E' };
+import { CHART_COLORS, PIE_COLORS, AXIS_TICK, TOOLTIP_STYLE, BAR_RADIUS } from '../utils/chartTheme';
 
 export default function Reports() {
   const { state } = useApp();
@@ -59,13 +58,13 @@ export default function Reports() {
         <div className="chart-box">
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={portfolioData} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E3E6EA" />
-              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-              <YAxis tickFormatter={(v) => formatCompact(v)} tick={{ fontSize: 12 }} width={64} />
-              <Tooltip formatter={(v) => formatINR(v)} />
+              <CartesianGrid vertical={false} stroke={CHART_COLORS.grid} />
+              <XAxis dataKey="name" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={(v) => formatCompact(v)} tick={AXIS_TICK} axisLine={false} tickLine={false} width={64} />
+              <Tooltip formatter={(v) => formatINR(v)} contentStyle={TOOLTIP_STYLE} cursor={{ fill: CHART_COLORS.grid }} />
               <Legend />
-              <Bar dataKey="Budget" fill="#8AA9C9" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Actual" fill="#E8792D" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Budget" fill={CHART_COLORS.muted} radius={BAR_RADIUS} />
+              <Bar dataKey="Actual" fill={CHART_COLORS.accent} radius={BAR_RADIUS} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -92,13 +91,13 @@ export default function Reports() {
             <div className="chart-box">
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={costVsEstimateData} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E3E6EA" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tickFormatter={(v) => formatCompact(v)} tick={{ fontSize: 12 }} width={64} />
-                  <Tooltip formatter={(v) => formatINR(v)} />
+                  <CartesianGrid vertical={false} stroke={CHART_COLORS.grid} />
+                  <XAxis dataKey="name" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={(v) => formatCompact(v)} tick={AXIS_TICK} axisLine={false} tickLine={false} width={64} />
+                  <Tooltip formatter={(v) => formatINR(v)} contentStyle={TOOLTIP_STYLE} cursor={{ fill: CHART_COLORS.grid }} />
                   <Legend />
-                  <Bar dataKey="Estimated" fill="#8AA9C9" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Actual" fill="#E8792D" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Estimated" fill={CHART_COLORS.muted} radius={BAR_RADIUS} />
+                  <Bar dataKey="Actual" fill={CHART_COLORS.accent} radius={BAR_RADIUS} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -112,12 +111,12 @@ export default function Reports() {
               <div className="chart-box">
                 <ResponsiveContainer width="100%" height={260}>
                   <PieChart>
-                    <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={90} label>
+                    <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={90} innerRadius={55} paddingAngle={2} stroke="none" label>
                       {pieData.map((d) => (
                         <Cell key={d.name} fill={PIE_COLORS[d.name]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(v) => formatINR(v)} />
+                    <Tooltip formatter={(v) => formatINR(v)} contentStyle={TOOLTIP_STYLE} cursor={{ fill: CHART_COLORS.grid }} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
@@ -136,11 +135,11 @@ export default function Reports() {
             <div className="chart-box">
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={laborSeries} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E3E6EA" />
-                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                  <YAxis tickFormatter={(v) => formatCompact(v)} tick={{ fontSize: 12 }} width={64} />
-                  <Tooltip formatter={(v) => formatINR(v)} />
-                  <Line type="monotone" dataKey="cost" stroke="#1D4E89" strokeWidth={2.5} dot={{ r: 3 }} />
+                  <CartesianGrid vertical={false} stroke={CHART_COLORS.grid} />
+                  <XAxis dataKey="date" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={(v) => formatCompact(v)} tick={AXIS_TICK} axisLine={false} tickLine={false} width={64} />
+                  <Tooltip formatter={(v) => formatINR(v)} contentStyle={TOOLTIP_STYLE} cursor={{ fill: CHART_COLORS.grid }} />
+                  <Line type="monotone" dataKey="cost" stroke={CHART_COLORS.primary} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
