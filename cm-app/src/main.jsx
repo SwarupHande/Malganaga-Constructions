@@ -5,13 +5,16 @@ import './index.css';
 import './firebase';
 import App from './App.jsx';
 import { AppProvider } from './context/AppContext.jsx';
+import { AuthProvider } from './context/AuthContext.jsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
+    <AuthProvider>
     <BrowserRouter>
       <AppProvider>
         <App />
       </AppProvider>
     </BrowserRouter>
+    </AuthProvider>
   </StrictMode>
 );

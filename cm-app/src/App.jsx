@@ -8,6 +8,8 @@ import ProjectDetail from './pages/ProjectDetail';
 import Workers from './pages/Workers';
 import Reports from './pages/Reports';
 import Estimates from './pages/Estimates';
+import Login from './pages/Login';
+import {useAuth} from './context/AuthContext';
 
 const TITLES = {
   '/': 'Dashboard',
@@ -21,7 +23,9 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const title = TITLES[location.pathname] || 'Project details';
-
+  const {user, loading} = useAuth();
+  if (loading) return <div className = "login"><p className="muted">Loading...</p></div>;
+  if(!user) return <Login />;
   return (
     <div className="app-shell">
       <Sidebar open={sidebarOpen} onNavigate={() => setSidebarOpen(false)} />

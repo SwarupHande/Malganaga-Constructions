@@ -10,3 +10,4 @@ export default function Topbar({ title, onMenuClick }) {
     </header>
   );
 }
+
