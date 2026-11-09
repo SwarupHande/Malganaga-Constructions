@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { LOCATIONS, DEFAULT_LOCATION, MANAGERS } from '../data/seedData';
+import { LOCATIONS, DEFAULT_LOCATION } from '../data/seedData';
 
 const STATES = Object.keys(LOCATIONS);
 
@@ -16,7 +16,6 @@ export default function ProjectForm({ onDone }) {
     startDate: new Date().toISOString().slice(0, 10),
     budget: '',
     statusId: state.statuses[0]?.id || '',
-    manager: MANAGERS[0],
   });
   const [error, setError] = useState('');
 
@@ -62,7 +61,6 @@ export default function ProjectForm({ onDone }) {
         startDate: form.startDate,
         budget: Number(form.budget),
         statusId: form.statusId,
-        manager: form.manager,
       },
     });
     onDone();
@@ -149,24 +147,15 @@ export default function ProjectForm({ onDone }) {
         </label>
       </div>
 
-      <div className="field-grid field-grid--2">
-        <label className="field">
-          <span>Site manager</span>
-          <select value={form.manager} onChange={(e) => update('manager', e.target.value)}>
-            {MANAGERS.map((m) => (
-              <option key={m} value={m}>{m}</option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span>Initial status</span>
-          <select value={form.statusId} onChange={(e) => update('statusId', e.target.value)}>
-            {state.statuses.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-        </label>
-      </div>
+      <label className="field">
+        <span>Initial stage</span>
+        <select value={form.statusId} onChange={(e) => update('statusId', e.target.value)}>
+          {state.statuses.map((s) => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </select>
+      </label>
+      <p className="muted">Assign a manager to each stage from the Team page after creating the project.</p>
 
       <div className="form__actions">
         <button type="button" className="btn btn--ghost" onClick={onDone}>Cancel</button>

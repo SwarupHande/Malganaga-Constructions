@@ -14,6 +14,7 @@ import {
   percent,
   LABOR_EXCLUDED_NOTE,
 } from '../utils/costs';
+import { currentStageManager, stageManagerOf } from '../utils/team';
 
 // Workers & Attendance tab disabled for now
 const TABS = ['Overview', /* 'Workers & Attendance', */ 'Costs', 'Estimate'];
@@ -37,6 +38,7 @@ export default function ProjectDetail() {
   }
 
   const status = state.statuses.find((s) => s.id === project.statusId);
+  const manager = currentStageManager(project, state.team);
   const cost = projectCostSummary(project, {
     estimates: state.estimates,
     expenses: state.expenses,
@@ -83,7 +85,11 @@ export default function ProjectDetail() {
           sub={`${percent(cost.actual.grand, project.budget)}% of budget`}
         />
         <MiniStat label="Days elapsed" value={daysElapsed} />
-        <MiniStat label="Current stage" value={<StatusBadge status={status} />} />
+        <MiniStat
+          label="Current stage"
+          value={<StatusBadge status={status} />}
+          sub={`Manager: ${manager?.name || 'Unassigned'}`}
+        />
       </div>
 
       <div className="tabs">
@@ -98,7 +104,7 @@ export default function ProjectDetail() {
         ))}
       </div>
 
-      {tab === 'Overview' && <OverviewTab project={project} />}
+      {tab === 'Overview' && <OverviewTab project={project} manager={manager} />}
       {/* {tab === 'Workers & Attendance' && <WorkersTab project={project} />} */}
       {tab === 'Costs' && <CostsTab project={project} cost={cost} />}
       {tab === 'Estimate' && <EstimateTab project={project} />}
@@ -116,13 +122,15 @@ function MiniStat({ label, value, sub }) {
   );
 }
 
-function OverviewTab({ project }) {
+function OverviewTab({ project, manager }) {
+  const { state } = useApp();
   return (
+    <>
     <section className="card">
       <h2 className="card__title">Project details</h2>
       <dl className="detail-list">
         <div><dt>Description</dt><dd>{project.description || '\u2014'}</dd></div>
-        <div><dt>Site manager</dt><dd>{project.manager}</dd></div>
+        <div><dt>Stage manager</dt><dd>{manager?.name || 'Unassigned'}</dd></div>
         <div><dt>Start date</dt><dd>{formatDMY(project.startDate)}</dd></div>
         <div><dt>State</dt><dd>{project.location.state}</dd></div>
         <div><dt>District</dt><dd>{project.location.district}</dd></div>
@@ -131,6 +139,43 @@ function OverviewTab({ project }) {
         <div><dt>Budget</dt><dd>{formatINR(project.budget)}</dd></div>
       </dl>
     </section>
+
+    <section className="card">
+      <div className="card__header-row">
+        <h2 className="card__title">Stage managers</h2>
+        <Link to={`/team?project=${project.id}`} className="link">Edit on Team page &rarr;</Link>
+      </div>
+      <div className="table-wrap">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Stage</th>
+              <th>Manager</th>
+              <th>Phone</th>
+            </tr>
+          </thead>
+          <tbody>
+            {state.statuses.map((s, i) => {
+              const m = stageManagerOf(project, s.id, state.team);
+              const isCurrent = s.id === project.statusId;
+              return (
+                <tr key={s.id} className={isCurrent ? 'table__row--current' : ''}>
+                  <td className="table__index">{String(i + 1).padStart(2, '0')}</td>
+                  <td>
+                    <StatusBadge status={s} />
+                    {isCurrent && <span className="current-tag">Current</span>}
+                  </td>
+                  <td>{m ? m.name : <span className="muted">Unassigned</span>}</td>
+                  <td>{m?.phone || '\u2014'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    </>
   );
 }
 

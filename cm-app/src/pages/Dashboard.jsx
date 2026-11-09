@@ -3,10 +3,11 @@ import { useApp } from '../context/AppContext';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import { projectCostSummary, formatINR, percent } from '../utils/costs';
+import { currentStageManager } from '../utils/team';
 
 export default function Dashboard() {
   const { state } = useApp();
-  const { projects, statuses, estimates, expenses } = state;
+  const { projects, statuses, estimates, expenses, team } = state;
 
   const summaries = projects.map((p) => ({
     project: p,
@@ -102,6 +103,7 @@ export default function Dashboard() {
                 <th>Project</th>
                 <th>Location</th>
                 <th>Stage</th>
+                <th>Stage manager</th>
                 <th>Budget</th>
                 <th>Actual cost</th>
               </tr>
@@ -116,6 +118,7 @@ export default function Dashboard() {
                     </td>
                     <td>{project.location.taluka}, {project.location.district}</td>
                     <td><StatusBadge status={status} /></td>
+                    <td>{currentStageManager(project, team)?.name || <span className="muted">Unassigned</span>}</td>
                     <td>{formatINR(project.budget)}</td>
                     <td>{formatINR(cost.actual.grand)}</td>
                   </tr>

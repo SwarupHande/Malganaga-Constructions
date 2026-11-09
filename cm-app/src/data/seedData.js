@@ -57,6 +57,21 @@ export const SEED_WORKERS = [
   { id: 'w-7', name: 'Santosh Kale', role: 'Site Supervisor', dailyRate: 950 },
 ];
 
+// Team members who manage construction stages.
+export const SEED_TEAM = [
+  { id: 'tm-1', name: 'Ramesh Patil', role: 'Site Engineer', phone: '98220 41537' },
+  { id: 'tm-2', name: 'Sunita Deshmukh', role: 'Site Supervisor', phone: '98901 22764' },
+  { id: 'tm-3', name: 'Ajay Kulkarni', role: 'Finishing Supervisor', phone: '97644 80319' },
+];
+
+// { 'st-1': memberId, ..., 'st-N': memberId } for stages from..to (1-based, inclusive).
+function stageRange(from, to, memberId) {
+  const out = {};
+  for (let i = from; i <= to; i++) out[`st-${i}`] = memberId;
+  return out;
+}
+
+// Each project maps stage id -> team member id; managers can differ per project.
 export const SEED_PROJECTS = [
   {
     id: 'p-1',
@@ -66,7 +81,7 @@ export const SEED_PROJECTS = [
     startDate: '2026-06-01',
     budget: 4200000,
     statusId: 'st-5',
-    manager: 'Ramesh Patil',
+    stageManagers: { ...stageRange(1, 7, 'tm-1'), ...stageRange(8, 14, 'tm-2'), ...stageRange(15, 21, 'tm-3') },
   },
   {
     id: 'p-2',
@@ -76,7 +91,7 @@ export const SEED_PROJECTS = [
     startDate: '2026-07-10',
     budget: 2800000,
     statusId: 'st-2',
-    manager: 'Sunita Deshmukh',
+    stageManagers: { ...stageRange(1, 7, 'tm-2'), ...stageRange(8, 21, 'tm-3') },
   },
   {
     id: 'p-3',
@@ -86,7 +101,7 @@ export const SEED_PROJECTS = [
     startDate: '2026-04-15',
     budget: 6100000,
     statusId: 'st-10',
-    manager: 'Ramesh Patil',
+    stageManagers: { ...stageRange(1, 10, 'tm-1'), ...stageRange(11, 21, 'tm-3') },
   },
   {
     id: 'p-4',
@@ -96,7 +111,7 @@ export const SEED_PROJECTS = [
     startDate: '2026-08-01',
     budget: 1600000,
     statusId: 'st-1',
-    manager: 'Sunita Deshmukh',
+    stageManagers: stageRange(1, 4, 'tm-2'),
   },
 ];
 
@@ -198,4 +213,3 @@ export const SEED_EXPENSES = [
   { id: 'exp-5', projectId: 'p-3', category: 'Material', description: 'Cement - batch 1 & 2', amount: 132000, date: '2026-05-28' },
 ];
 
-export const MANAGERS = ['Ramesh Patil', 'Sunita Deshmukh', 'Ajay Kulkarni'];

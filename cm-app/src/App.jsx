@@ -8,6 +8,7 @@ import ProjectDetail from './pages/ProjectDetail';
 // import Workers from './pages/Workers';
 import Reports from './pages/Reports';
 import Estimates from './pages/Estimates';
+import Team from './pages/Team';
 import Login from './pages/Login';
 import {useAuth} from './context/AuthContext';
 
@@ -16,6 +17,7 @@ const TITLES = {
   '/projects': 'Projects',
   '/workers': 'Workers',
   '/estimates': 'Estimates',
+  '/team': 'Team',
   '/reports': 'Reports',
 };
 
@@ -40,6 +42,7 @@ export default function App() {
             {/* Workers section disabled for now */}
             {/* <Route path="/workers" element={<Workers />} /> */}
             <Route path="/estimates" element={<Estimates />} />
+            <Route path="/team" element={<Team />} />
             <Route path="/reports" element={<Reports />} />
           </Routes>
         </main>

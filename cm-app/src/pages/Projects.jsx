@@ -6,6 +6,7 @@ import ProjectForm from '../components/ProjectForm';
 import StatusManager from '../components/StatusManager';
 import StatusBadge from '../components/StatusBadge';
 import { projectCostSummary, formatINR, formatMonthYear, percent } from '../utils/costs';
+import { currentStageManager } from '../utils/team';
 import { LOCATIONS } from '../data/seedData';
 
 export default function Projects() {
@@ -105,7 +106,7 @@ export default function Projects() {
                 </p>
                 {project.description && <p className="project-card__desc">{project.description}</p>}
                 <div className="project-card__meta">
-                  <span>Manager: {project.manager}</span>
+                  <span>Stage manager: {currentStageManager(project, state.team)?.name || 'Unassigned'}</span>
                   <span>Started {formatMonthYear(project.startDate)}</span>
                 </div>
                 <div className="project-card__cost">

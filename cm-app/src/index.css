@@ -656,6 +656,36 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
 .table select,
 .table input[type="text"] { padding: 7px 9px; width: 100%; min-width: 120px; }
 .table--estimate select { min-width: 100px; }
+.table__index { width: 44px; font-family: var(--font-mono); font-size: 0.76rem; color: var(--color-text-muted); }
+.table__actions { width: 1%; text-align: right; }
+.table__row--current td { background: var(--color-accent-soft); }
+.table__row--current .table__index { color: var(--color-accent-dark); font-weight: 600; }
+.current-tag {
+  margin-left: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-accent-dark);
+}
+
+/* Team member name with initials */
+.member { display: inline-flex; align-items: center; gap: 10px; }
+.member__avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #1b3a5e;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
 
 /* ============================================================
    Modal

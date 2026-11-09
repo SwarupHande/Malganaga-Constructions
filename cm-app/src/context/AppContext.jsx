@@ -7,6 +7,7 @@ import {
   SEED_ATTENDANCE,
   SEED_ESTIMATES,
   SEED_EXPENSES,
+  SEED_TEAM,
 } from '../data/seedData';
 
 const AppContext = createContext(null);
@@ -19,6 +20,7 @@ const initialState = {
   attendance: SEED_ATTENDANCE,
   estimates: SEED_ESTIMATES,
   expenses: SEED_EXPENSES,
+  team: SEED_TEAM,
 };
 
 let idCounter = 1000;
@@ -30,7 +32,7 @@ function nextId(prefix) {
 function reducer(state, action) {
   switch (action.type) {
     case 'ADD_PROJECT': {
-      const project = { ...action.payload, id: nextId('p') };
+      const project = { stageManagers: {}, ...action.payload, id: nextId('p') };
       return { ...state, projects: [project, ...state.projects] };
     }
     case 'UPDATE_PROJECT_STATUS': {
@@ -104,6 +106,35 @@ function reducer(state, action) {
         items: items.map((it, i) => ({ ...it, id: nextId('ei') })),
       };
       return { ...state, estimates: [...state.estimates, estimate] };
+    }
+    case 'ADD_MEMBER': {
+      const member = { ...action.payload, id: nextId('tm') };
+      return { ...state, team: [...state.team, member] };
+    }
+    case 'REMOVE_MEMBER': {
+      // Also clear the member from every stage they manage, on every project.
+      const { id } = action.payload;
+      const projects = state.projects.map((p) => {
+        const stageManagers = Object.fromEntries(
+          Object.entries(p.stageManagers || {}).filter(([, memberId]) => memberId !== id)
+        );
+        return { ...p, stageManagers };
+      });
+      return { ...state, projects, team: state.team.filter((m) => m.id !== id) };
+    }
+    case 'ASSIGN_STAGE_MANAGER': {
+      // payload: { projectId, statusId, memberId } - an empty memberId unassigns the stage.
+      const { projectId, statusId, memberId } = action.payload;
+      return {
+        ...state,
+        projects: state.projects.map((p) => {
+          if (p.id !== projectId) return p;
+          const stageManagers = { ...(p.stageManagers || {}) };
+          if (memberId) stageManagers[statusId] = memberId;
+          else delete stageManagers[statusId];
+          return { ...p, stageManagers };
+        }),
+      };
     }
     case 'ADD_EXPENSE': {
       const expense = { ...action.payload, id: nextId('exp') };
