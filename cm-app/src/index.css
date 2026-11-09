@@ -181,32 +181,11 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
   padding: 26px 22px 22px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
-.sidebar__brand-mark {
-  width: 40px;
+.sidebar__brand-logo {
   height: 40px;
-  border: 1.5px solid var(--color-accent);
-  border-radius: 2px;
-  background: transparent;
-  color: var(--color-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-weight: 500;
-  font-size: 0.82rem;
-  letter-spacing: 0.06em;
+  width: auto;
   flex-shrink: 0;
-  position: relative;
-}
-/* Small corner tick, like a registration mark */
-.sidebar__brand-mark::after {
-  content: '';
-  position: absolute;
-  right: -5px;
-  bottom: -5px;
-  width: 7px;
-  height: 7px;
-  background: var(--color-accent);
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
 }
 .sidebar__brand-text {
   font-family: var(--font-serif);
@@ -426,6 +405,13 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
   font-size: 0.85rem;
   font-weight: 600;
 }
+.app-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
 .form__actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 6px; }
 .form__saved { color: var(--color-success); font-size: 0.85rem; font-weight: 600; margin-right: auto; }
 
@@ -613,7 +599,7 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
   align-items: center;
   gap: 6px;
   padding: 3px 9px 3px 8px;
-  border-radius: 2px;
+  border-radius: 6px;
   font-size: 0.74rem;
   font-weight: 600;
   color: var(--tone);
@@ -621,7 +607,7 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
   border: 1px solid color-mix(in srgb, var(--tone) 28%, transparent);
   white-space: nowrap;
 }
-.badge::before { content: ''; width: 6px; height: 6px; background: var(--tone); flex-shrink: 0; }
+.badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--tone); flex-shrink: 0; }
 .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--tone); flex-shrink: 0; }
 
 /* ============================================================
@@ -656,6 +642,79 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
 .table select,
 .table input[type="text"] { padding: 7px 9px; width: 100%; min-width: 120px; }
 .table--estimate select { min-width: 100px; }
+.suggest-field { position: relative; display: flex; align-items: center; min-width: 220px; }
+.suggest-field input { flex: 1; }
+.table .suggest-field--custom input[type="text"] { padding-left: 62px; padding-right: 32px; }
+.suggest-field__tag {
+  position: absolute;
+  left: 7px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-dark);
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+.suggest-field__back {
+  position: absolute;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.suggest-field__back:hover { color: var(--color-ink); background: var(--color-paper); }
+
+/* Type-ahead suggestion list (portalled to <body>, positioned by SuggestInput) */
+.suggest {
+  position: fixed;
+  z-index: 60;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 252px;
+  overflow-y: auto;
+  background: var(--color-sheet);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius-md);
+  box-shadow: 0 16px 36px -14px rgba(23, 25, 29, 0.4);
+}
+.suggest__option {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.suggest__option--active { background: var(--color-accent-soft); }
+.suggest__option--other {
+  margin-top: 4px;
+  border-top: 1px dashed var(--color-rule-strong);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+.suggest__name mark { background: none; color: var(--color-accent-dark); font-weight: 700; }
+.suggest__unit {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
 .table__index { width: 44px; font-family: var(--font-mono); font-size: 0.76rem; color: var(--color-text-muted); }
 .table__actions { width: 1%; text-align: right; }
 .table__row--current td { background: var(--color-accent-soft); }
@@ -1023,13 +1082,20 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
 }
 .login__brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   margin-bottom: 8px;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--color-rule);
+  text-align: center;
 }
-.login__brand .sidebar__brand-mark { color: var(--color-accent); }
-.login__brand .muted { margin: 2px 0 0; font-size: 0.84rem; }
-.login__title { font-family: var(--font-serif); font-size: 1.45rem; font-weight: 500; }
+.login__logo { width: 100%; max-width: 260px; height: auto; }
+.login__brand .muted {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
 .login__card .btn { margin-top: 8px; padding: 12px; }

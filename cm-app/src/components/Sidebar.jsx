@@ -20,7 +20,7 @@ export default function Sidebar({ open, onNavigate }) {
   return (
     <aside className={`sidebar${open ? ' sidebar--open' : ''}`}>
       <div className="sidebar__brand">
-        <span className="sidebar__brand-mark">MC</span>
+        <img className="sidebar__brand-logo" src="/logo-mark.png" alt="" />
         <span className="sidebar__brand-text">Malganga Constructions</span>
       </div>
       <nav className="sidebar__nav">

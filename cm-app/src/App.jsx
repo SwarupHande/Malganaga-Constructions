@@ -11,6 +11,7 @@ import Estimates from './pages/Estimates';
 import Team from './pages/Team';
 import Login from './pages/Login';
 import {useAuth} from './context/AuthContext';
+import { useApp } from './context/AppContext';
 
 const TITLES = {
   '/': 'Dashboard',
@@ -26,8 +27,10 @@ export default function App() {
   const location = useLocation();
   const title = TITLES[location.pathname] || 'Project details';
   const {user, loading} = useAuth();
+  const { loading: dataLoading, error, clearError } = useApp();
   if (loading) return <div className = "login"><p className="muted">Loading...</p></div>;
   if(!user) return <Login />;
+  if (dataLoading) return <div className="login"><p className="muted">Loading project data...</p></div>;
   return (
     <div className="app-shell">
       <Sidebar open={sidebarOpen} onNavigate={() => setSidebarOpen(false)} />
@@ -35,6 +38,12 @@ export default function App() {
       <div className="app-shell__main">
         <Topbar title={title} onMenuClick={() => setSidebarOpen((o) => !o)} />
         <main className="app-shell__content">
+          {error && (
+            <div className="form__error app-error" role="alert">
+              <span>{error}</span>
+              <button className="icon-btn" onClick={clearError} aria-label="Dismiss">&times;</button>
+            </div>
+          )}
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/projects" element={<Projects />} />

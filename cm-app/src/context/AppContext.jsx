@@ -1,153 +1,198 @@
-import { createContext, useContext, useMemo, useReducer } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
-  DEFAULT_STATUSES,
-  SEED_WORKERS,
-  SEED_PROJECTS,
-  SEED_PROJECT_WORKERS,
-  SEED_ATTENDANCE,
-  SEED_ESTIMATES,
-  SEED_EXPENSES,
-  SEED_TEAM,
-} from '../data/seedData';
+  addDoc,
+  collection,
+  deleteField,
+  doc,
+  FieldPath,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  writeBatch,
+} from 'firebase/firestore';
+import { db } from '../firebase';
+import { useAuth } from './AuthContext';
+
+// App data lives in Firestore:
+//   projects/{id}   - stageManagers: { [statusId]: memberId } is stored on the project
+//   estimates/{id}, expenses/{id}, team/{id}
+//   settings/statuses - { list: [...] } so stage order is kept
+// Pages still call dispatch({ type, payload }); dispatch now writes to Firestore and the
+// live onSnapshot listeners below push the change back into state (instantly, for local writes).
 
 const AppContext = createContext(null);
 
-const initialState = {
-  statuses: DEFAULT_STATUSES,
-  workers: SEED_WORKERS,
-  projects: SEED_PROJECTS,
-  projectWorkers: SEED_PROJECT_WORKERS,
-  attendance: SEED_ATTENDANCE,
-  estimates: SEED_ESTIMATES,
-  expenses: SEED_EXPENSES,
-  team: SEED_TEAM,
+const COLLECTIONS = ['projects', 'estimates', 'expenses', 'team'];
+const SOURCES = [...COLLECTIONS, 'statuses'];
+const statusesRef = doc(db, 'settings', 'statuses');
+
+const EMPTY = {
+  statuses: [],
+  projects: [],
+  estimates: [],
+  expenses: [],
+  team: [],
+  // Worker features are disabled; kept empty so any leftover reads don't crash.
+  workers: [],
+  projectWorkers: [],
+  attendance: [],
 };
 
-let idCounter = 1000;
-function nextId(prefix) {
-  idCounter += 1;
-  return `${prefix}-${idCounter}`;
-}
+// Newest first for projects (seeded docs have no createdAt and keep their id order).
+const SORTERS = {
+  projects: (a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0) || a.id.localeCompare(b.id),
+  expenses: (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0),
+  team: (a, b) => a.name.localeCompare(b.name),
+};
 
-function reducer(state, action) {
-  switch (action.type) {
-    case 'ADD_PROJECT': {
-      const project = { stageManagers: {}, ...action.payload, id: nextId('p') };
-      return { ...state, projects: [project, ...state.projects] };
-    }
-    case 'UPDATE_PROJECT_STATUS': {
-      const { projectId, statusId } = action.payload;
-      return {
-        ...state,
-        projects: state.projects.map((p) => (p.id === projectId ? { ...p, statusId } : p)),
-      };
-    }
-    case 'ADD_STATUS': {
-      const status = { id: nextId('st'), name: action.payload.name, color: action.payload.color };
-      return { ...state, statuses: [...state.statuses, status] };
-    }
-    case 'REORDER_STATUS': {
-      const { index, direction } = action.payload;
-      const list = [...state.statuses];
-      const swapWith = index + direction;
-      if (swapWith < 0 || swapWith >= list.length) return state;
-      [list[index], list[swapWith]] = [list[swapWith], list[index]];
-      return { ...state, statuses: list };
-    }
-    case 'DELETE_STATUS': {
-      const inUse = state.projects.some((p) => p.statusId === action.payload.id);
-      if (inUse) return state;
-      return { ...state, statuses: state.statuses.filter((s) => s.id !== action.payload.id) };
-    }
-    case 'ADD_WORKER': {
-      const worker = { ...action.payload, id: nextId('w') };
-      return { ...state, workers: [worker, ...state.workers] };
-    }
-    case 'ASSIGN_WORKER': {
-      const { projectId, workerId, assignedDate } = action.payload;
-      const already = state.projectWorkers.some(
-        (pw) => pw.projectId === projectId && pw.workerId === workerId
-      );
-      if (already) return state;
-      const assignment = { id: nextId('pw'), projectId, workerId, assignedDate };
-      return { ...state, projectWorkers: [...state.projectWorkers, assignment] };
-    }
-    case 'REMOVE_ASSIGNMENT': {
-      return {
-        ...state,
-        projectWorkers: state.projectWorkers.filter((pw) => pw.id !== action.payload.id),
-      };
-    }
-    case 'MARK_ATTENDANCE_BATCH': {
-      // payload: { projectId, date, records: [{ workerId, present, hours }] }
-      const { projectId, date, records } = action.payload;
-      const filtered = state.attendance.filter(
-        (a) => !(a.projectId === projectId && a.date === date)
-      );
-      const additions = records.map((r) => ({
-        id: nextId('att'),
-        projectId,
-        date,
-        workerId: r.workerId,
-        present: r.present,
-        hours: r.hours,
-      }));
-      return { ...state, attendance: [...filtered, ...additions] };
-    }
-    case 'ADD_ESTIMATE_VERSION': {
-      const { projectId, items } = action.payload;
-      const existing = state.estimates.filter((e) => e.projectId === projectId);
-      const nextVersion = existing.length ? Math.max(...existing.map((e) => e.version)) + 1 : 1;
-      const estimate = {
-        id: nextId('est'),
-        projectId,
-        version: nextVersion,
-        createdDate: new Date().toISOString().slice(0, 10),
-        items: items.map((it, i) => ({ ...it, id: nextId('ei') })),
-      };
-      return { ...state, estimates: [...state.estimates, estimate] };
-    }
-    case 'ADD_MEMBER': {
-      const member = { ...action.payload, id: nextId('tm') };
-      return { ...state, team: [...state.team, member] };
-    }
-    case 'REMOVE_MEMBER': {
-      // Also clear the member from every stage they manage, on every project.
-      const { id } = action.payload;
-      const projects = state.projects.map((p) => {
-        const stageManagers = Object.fromEntries(
-          Object.entries(p.stageManagers || {}).filter(([, memberId]) => memberId !== id)
-        );
-        return { ...p, stageManagers };
-      });
-      return { ...state, projects, team: state.team.filter((m) => m.id !== id) };
-    }
-    case 'ASSIGN_STAGE_MANAGER': {
-      // payload: { projectId, statusId, memberId } - an empty memberId unassigns the stage.
-      const { projectId, statusId, memberId } = action.payload;
-      return {
-        ...state,
-        projects: state.projects.map((p) => {
-          if (p.id !== projectId) return p;
-          const stageManagers = { ...(p.stageManagers || {}) };
-          if (memberId) stageManagers[statusId] = memberId;
-          else delete stageManagers[statusId];
-          return { ...p, stageManagers };
-        }),
-      };
-    }
-    case 'ADD_EXPENSE': {
-      const expense = { ...action.payload, id: nextId('exp') };
-      return { ...state, expenses: [expense, ...state.expenses] };
-    }
-    default:
-      return state;
-  }
+function shortId(prefix) {
+  return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
 export function AppProvider({ children }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
-  const value = useMemo(() => ({ state, dispatch }), [state]);
+  const { user } = useAuth();
+  const [state, setState] = useState(EMPTY);
+  const [loaded, setLoaded] = useState(() => new Set());
+  const [error, setError] = useState('');
+
+  // Subscribe while signed in; drop everything on sign-out.
+  useEffect(() => {
+    if (!user) {
+      setState(EMPTY);
+      setLoaded(new Set());
+      return undefined;
+    }
+    const markLoaded = (key) => setLoaded((s) => (s.has(key) ? s : new Set(s).add(key)));
+    const onError = (err) => {
+      console.error(err);
+      setError(
+        err.code === 'permission-denied'
+          ? 'You do not have access to this data. Ask the admin to add your account.'
+          : `Could not load data: ${err.message}`
+      );
+    };
+
+    const unsubs = COLLECTIONS.map((name) =>
+      onSnapshot(
+        collection(db, name),
+        (snap) => {
+          const items = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
+          if (SORTERS[name]) items.sort(SORTERS[name]);
+          setState((s) => ({ ...s, [name]: items }));
+          markLoaded(name);
+        },
+        onError
+      )
+    );
+    unsubs.push(
+      onSnapshot(
+        statusesRef,
+        (snap) => {
+          setState((s) => ({ ...s, statuses: snap.data()?.list || [] }));
+          markLoaded('statuses');
+        },
+        onError
+      )
+    );
+    return () => unsubs.forEach((u) => u());
+  }, [user]);
+
+  const write = useCallback(
+    async (action) => {
+      const { type, payload } = action;
+      switch (type) {
+        case 'ADD_PROJECT':
+          return addDoc(collection(db, 'projects'), {
+            stageManagers: {},
+            ...payload,
+            createdAt: serverTimestamp(),
+          });
+        case 'UPDATE_PROJECT_STATUS':
+          return updateDoc(doc(db, 'projects', payload.projectId), { statusId: payload.statusId });
+
+        case 'ADD_STATUS': {
+          const status = { id: shortId('st'), name: payload.name, color: payload.color };
+          return setDoc(statusesRef, { list: [...state.statuses, status] });
+        }
+        case 'REORDER_STATUS': {
+          const { index, direction } = payload;
+          const list = [...state.statuses];
+          const swapWith = index + direction;
+          if (swapWith < 0 || swapWith >= list.length) return undefined;
+          [list[index], list[swapWith]] = [list[swapWith], list[index]];
+          return setDoc(statusesRef, { list });
+        }
+        case 'DELETE_STATUS': {
+          const inUse = state.projects.some((p) => p.statusId === payload.id);
+          if (inUse) return undefined;
+          return setDoc(statusesRef, { list: state.statuses.filter((s) => s.id !== payload.id) });
+        }
+
+        case 'ADD_ESTIMATE_VERSION': {
+          const { projectId, items } = payload;
+          const existing = state.estimates.filter((e) => e.projectId === projectId);
+          const version = existing.length ? Math.max(...existing.map((e) => e.version)) + 1 : 1;
+          return addDoc(collection(db, 'estimates'), {
+            projectId,
+            version,
+            createdDate: new Date().toISOString().slice(0, 10),
+            items: items.map((it, i) => ({ ...it, id: `ei-${i + 1}` })),
+            createdAt: serverTimestamp(),
+          });
+        }
+        case 'ADD_EXPENSE':
+          return addDoc(collection(db, 'expenses'), { ...payload, createdAt: serverTimestamp() });
+
+        case 'ADD_MEMBER':
+          return addDoc(collection(db, 'team'), { ...payload, createdAt: serverTimestamp() });
+        case 'REMOVE_MEMBER': {
+          // Delete the member and clear them from every stage they manage, all in one batch.
+          const batch = writeBatch(db);
+          batch.delete(doc(db, 'team', payload.id));
+          state.projects.forEach((p) => {
+            Object.entries(p.stageManagers || {}).forEach(([statusId, memberId]) => {
+              if (memberId === payload.id) {
+                batch.update(doc(db, 'projects', p.id), new FieldPath('stageManagers', statusId), deleteField());
+              }
+            });
+          });
+          return batch.commit();
+        }
+        case 'ASSIGN_STAGE_MANAGER': {
+          // FieldPath (not 'stageManagers.st-1') so stage ids are never misread as nested paths.
+          const { projectId, statusId, memberId } = payload;
+          return updateDoc(
+            doc(db, 'projects', projectId),
+            new FieldPath('stageManagers', statusId),
+            memberId || deleteField()
+          );
+        }
+
+        default:
+          console.warn(`Unknown or disabled action: ${type}`);
+          return undefined;
+      }
+    },
+    [state]
+  );
+
+  // Same call shape pages already use; failures surface as a banner instead of vanishing.
+  const dispatch = useCallback(
+    (action) =>
+      write(action).catch((err) => {
+        console.error(err);
+        setError(`Could not save: ${err.message}`);
+      }),
+    [write]
+  );
+
+  const loading = Boolean(user) && SOURCES.some((k) => !loaded.has(k)) && !error;
+
+  const value = useMemo(
+    () => ({ state, dispatch, loading, error, clearError: () => setError('') }),
+    [state, dispatch, loading, error]
+  );
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 

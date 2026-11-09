@@ -4,6 +4,7 @@ import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import { projectCostSummary, formatINR, percent } from '../utils/costs';
 import { currentStageManager } from '../utils/team';
+import { seedFirestore } from '../data/seedFirestore';
 
 export default function Dashboard() {
   const { state } = useApp();
@@ -31,6 +32,18 @@ export default function Dashboard() {
 
   return (
     <div className="page">
+      {/* Dev-only, and only while Firestore is empty: one-time upload of the sample data. */}
+      {import.meta.env.DEV && projects.length === 0 && (
+        <div className="empty-state">
+          <p>Firestore has no data yet.</p>
+          <button
+            className="btn btn--primary btn--sm"
+            onClick={() => seedFirestore().catch((e) => alert(e.message))}
+          >
+            Upload sample data to Firestore
+          </button>
+        </div>
+      )}
       <div className="stat-grid">
         <StatCard label="Active projects" value={projects.length} />
         <StatCard label="Total budget" value={formatINR(totalBudget)} />

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { estimateItemTotal, formatINR, COST_CATEGORIES, LABOR_EXCLUDED_NOTE } from '../utils/costs';
+import { ESTIMATE_CATALOG } from '../data/materials';
+import SuggestInput from './SuggestInput';
 
 // Labor is left out while worker features are disabled.
 const CATEGORIES = COST_CATEGORIES;
@@ -73,11 +75,13 @@ export default function EstimateBuilder({ project, onDone }) {
                   </select>
                 </td>
                 <td>
-                  <input
-                    type="text"
-                    placeholder="e.g. Cement (OPC 43)"
+                  <SuggestInput
                     value={r.description}
-                    onChange={(e) => updateRow(r.rowKey, 'description', e.target.value)}
+                    onChange={(v) => updateRow(r.rowKey, 'description', v)}
+                    options={ESTIMATE_CATALOG[r.category] || []}
+                    placeholder={r.category === 'Overhead' ? 'e.g. Transport charges' : 'Type e.g. cement, steel, sand…'}
+                    ariaLabel="Description"
+                    allowOther
                   />
                 </td>
                 <td>

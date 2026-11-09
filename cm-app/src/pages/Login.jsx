@@ -31,11 +31,8 @@ export default function Login() {
     <div className="login">
       <form className="login__card form" onSubmit={handleSubmit}>
         <div className="login__brand">
-          <span className="sidebar__brand-mark">MC</span>
-          <div>
-            <h1 className="login__title">Malganga Constructions</h1>
-            <p className="muted">Sign in to continue</p>
-          </div>
+          <img className="login__logo" src="/logo-full.png" alt="Malganga Constructions" />
+          <p className="muted">Sign in to continue</p>
         </div>
 
         {error && <div className="form__error">{error}</div>}
