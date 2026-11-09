@@ -5,7 +5,7 @@ import Topbar from './components/Topbar';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
-import Workers from './pages/Workers';
+// import Workers from './pages/Workers';
 import Reports from './pages/Reports';
 import Estimates from './pages/Estimates';
 import Login from './pages/Login';
@@ -37,7 +37,8 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:id" element={<ProjectDetail />} />
-            <Route path="/workers" element={<Workers />} />
+            {/* Workers section disabled for now */}
+            {/* <Route path="/workers" element={<Workers />} /> */}
             <Route path="/estimates" element={<Estimates />} />
             <Route path="/reports" element={<Reports />} />
           </Routes>

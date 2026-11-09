@@ -1,18 +1,22 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react'; // useMemo was only used by the disabled Workers tab
 import { Link, useParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
-import AttendanceSheet from '../components/AttendanceSheet';
+// import AttendanceSheet from '../components/AttendanceSheet';
 import EstimateBuilder from '../components/EstimateBuilder';
 import {
   projectCostSummary,
   estimateItemTotal,
+  costItems,
   formatINR,
+  formatDMY,
   percent,
+  LABOR_EXCLUDED_NOTE,
 } from '../utils/costs';
 
-const TABS = ['Overview', 'Workers & Attendance', 'Costs', 'Estimate'];
+// Workers & Attendance tab disabled for now
+const TABS = ['Overview', /* 'Workers & Attendance', */ 'Costs', 'Estimate'];
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -34,8 +38,6 @@ export default function ProjectDetail() {
 
   const status = state.statuses.find((s) => s.id === project.statusId);
   const cost = projectCostSummary(project, {
-    attendance: state.attendance,
-    workers: state.workers,
     estimates: state.estimates,
     expenses: state.expenses,
   });
@@ -97,7 +99,7 @@ export default function ProjectDetail() {
       </div>
 
       {tab === 'Overview' && <OverviewTab project={project} />}
-      {tab === 'Workers & Attendance' && <WorkersTab project={project} />}
+      {/* {tab === 'Workers & Attendance' && <WorkersTab project={project} />} */}
       {tab === 'Costs' && <CostsTab project={project} cost={cost} />}
       {tab === 'Estimate' && <EstimateTab project={project} />}
     </div>
@@ -121,7 +123,7 @@ function OverviewTab({ project }) {
       <dl className="detail-list">
         <div><dt>Description</dt><dd>{project.description || '\u2014'}</dd></div>
         <div><dt>Site manager</dt><dd>{project.manager}</dd></div>
-        <div><dt>Start date</dt><dd>{project.startDate}</dd></div>
+        <div><dt>Start date</dt><dd>{formatDMY(project.startDate)}</dd></div>
         <div><dt>State</dt><dd>{project.location.state}</dd></div>
         <div><dt>District</dt><dd>{project.location.district}</dd></div>
         <div><dt>Taluka</dt><dd>{project.location.taluka}</dd></div>
@@ -132,129 +134,130 @@ function OverviewTab({ project }) {
   );
 }
 
-function WorkersTab({ project }) {
-  const { state, dispatch } = useApp();
-  const [selectedWorker, setSelectedWorker] = useState('');
-  const [assignDate, setAssignDate] = useState('2026-08-15');
-
-  const assignments = state.projectWorkers.filter((pw) => pw.projectId === project.id);
-  const assignedIds = new Set(assignments.map((a) => a.workerId));
-  const availableWorkers = state.workers.filter((w) => !assignedIds.has(w.id));
-
-  const recentAttendance = state.attendance
-    .filter((a) => a.projectId === project.id)
-    .sort((a, b) => (a.date < b.date ? 1 : -1))
-    .slice(0, 10);
-
-  function handleAssign(e) {
-    e.preventDefault();
-    if (!selectedWorker) return;
-    dispatch({
-      type: 'ASSIGN_WORKER',
-      payload: { projectId: project.id, workerId: selectedWorker, assignedDate: assignDate },
-    });
-    setSelectedWorker('');
-  }
-
-  return (
-    <>
-      <section className="card">
-        <h2 className="card__title">Assigned workers</h2>
-        {assignments.length === 0 ? (
-          <p className="muted">No workers assigned yet.</p>
-        ) : (
-          <div className="table-wrap">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Worker</th>
-                  <th>Role</th>
-                  <th>Daily rate</th>
-                  <th>Assigned since</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {assignments.map((a) => {
-                  const worker = state.workers.find((w) => w.id === a.workerId);
-                  return (
-                    <tr key={a.id}>
-                      <td>{worker?.name}</td>
-                      <td>{worker?.role}</td>
-                      <td>{formatINR(worker?.dailyRate)}</td>
-                      <td>{a.assignedDate}</td>
-                      <td>
-                        <button
-                          className="btn btn--ghost btn--sm"
-                          onClick={() => dispatch({ type: 'REMOVE_ASSIGNMENT', payload: { id: a.id } })}
-                        >
-                          Remove
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {availableWorkers.length > 0 && (
-          <form className="inline-form" onSubmit={handleAssign}>
-            <select value={selectedWorker} onChange={(e) => setSelectedWorker(e.target.value)}>
-              <option value="">Select a worker to assign…</option>
-              {availableWorkers.map((w) => (
-                <option key={w.id} value={w.id}>{w.name} — {w.role}</option>
-              ))}
-            </select>
-            <input type="date" value={assignDate} onChange={(e) => setAssignDate(e.target.value)} />
-            <button type="submit" className="btn btn--primary btn--sm" disabled={!selectedWorker}>
-              Assign
-            </button>
-          </form>
-        )}
-      </section>
-
-      <section className="card">
-        <h2 className="card__title">Mark daily attendance</h2>
-        <AttendanceSheet project={project} />
-      </section>
-
-      <section className="card">
-        <h2 className="card__title">Recent attendance</h2>
-        {recentAttendance.length === 0 ? (
-          <p className="muted">No attendance recorded yet.</p>
-        ) : (
-          <div className="table-wrap">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Worker</th>
-                  <th>Present</th>
-                  <th>Hours</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentAttendance.map((a) => {
-                  const worker = state.workers.find((w) => w.id === a.workerId);
-                  return (
-                    <tr key={a.id}>
-                      <td>{a.date}</td>
-                      <td>{worker?.name}</td>
-                      <td>{a.present ? 'Yes' : 'No'}</td>
-                      <td>{a.hours}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-    </>
-  );
-}
+// Workers & Attendance tab - disabled for now.
+// function WorkersTab({ project }) {
+//   const { state, dispatch } = useApp();
+//   const [selectedWorker, setSelectedWorker] = useState('');
+//   const [assignDate, setAssignDate] = useState('2026-08-15');
+//
+//   const assignments = state.projectWorkers.filter((pw) => pw.projectId === project.id);
+//   const assignedIds = new Set(assignments.map((a) => a.workerId));
+//   const availableWorkers = state.workers.filter((w) => !assignedIds.has(w.id));
+//
+//   const recentAttendance = state.attendance
+//     .filter((a) => a.projectId === project.id)
+//     .sort((a, b) => (a.date < b.date ? 1 : -1))
+//     .slice(0, 10);
+//
+//   function handleAssign(e) {
+//     e.preventDefault();
+//     if (!selectedWorker) return;
+//     dispatch({
+//       type: 'ASSIGN_WORKER',
+//       payload: { projectId: project.id, workerId: selectedWorker, assignedDate: assignDate },
+//     });
+//     setSelectedWorker('');
+//   }
+//
+//   return (
+//     <>
+//       <section className="card">
+//         <h2 className="card__title">Assigned workers</h2>
+//         {assignments.length === 0 ? (
+//           <p className="muted">No workers assigned yet.</p>
+//         ) : (
+//           <div className="table-wrap">
+//             <table className="table">
+//               <thead>
+//                 <tr>
+//                   <th>Worker</th>
+//                   <th>Role</th>
+//                   <th>Daily rate</th>
+//                   <th>Assigned since</th>
+//                   <th />
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {assignments.map((a) => {
+//                   const worker = state.workers.find((w) => w.id === a.workerId);
+//                   return (
+//                     <tr key={a.id}>
+//                       <td>{worker?.name}</td>
+//                       <td>{worker?.role}</td>
+//                       <td>{formatINR(worker?.dailyRate)}</td>
+//                       <td>{a.assignedDate}</td>
+//                       <td>
+//                         <button
+//                           className="btn btn--ghost btn--sm"
+//                           onClick={() => dispatch({ type: 'REMOVE_ASSIGNMENT', payload: { id: a.id } })}
+//                         >
+//                           Remove
+//                         </button>
+//                       </td>
+//                     </tr>
+//                   );
+//                 })}
+//               </tbody>
+//             </table>
+//           </div>
+//         )}
+//
+//         {availableWorkers.length > 0 && (
+//           <form className="inline-form" onSubmit={handleAssign}>
+//             <select value={selectedWorker} onChange={(e) => setSelectedWorker(e.target.value)}>
+//               <option value="">Select a worker to assign…</option>
+//               {availableWorkers.map((w) => (
+//                 <option key={w.id} value={w.id}>{w.name} — {w.role}</option>
+//               ))}
+//             </select>
+//             <input type="date" value={assignDate} onChange={(e) => setAssignDate(e.target.value)} />
+//             <button type="submit" className="btn btn--primary btn--sm" disabled={!selectedWorker}>
+//               Assign
+//             </button>
+//           </form>
+//         )}
+//       </section>
+//
+//       <section className="card">
+//         <h2 className="card__title">Mark daily attendance</h2>
+//         <AttendanceSheet project={project} />
+//       </section>
+//
+//       <section className="card">
+//         <h2 className="card__title">Recent attendance</h2>
+//         {recentAttendance.length === 0 ? (
+//           <p className="muted">No attendance recorded yet.</p>
+//         ) : (
+//           <div className="table-wrap">
+//             <table className="table">
+//               <thead>
+//                 <tr>
+//                   <th>Date</th>
+//                   <th>Worker</th>
+//                   <th>Present</th>
+//                   <th>Hours</th>
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {recentAttendance.map((a) => {
+//                   const worker = state.workers.find((w) => w.id === a.workerId);
+//                   return (
+//                     <tr key={a.id}>
+//                       <td>{a.date}</td>
+//                       <td>{worker?.name}</td>
+//                       <td>{a.present ? 'Yes' : 'No'}</td>
+//                       <td>{a.hours}</td>
+//                     </tr>
+//                   );
+//                 })}
+//               </tbody>
+//             </table>
+//           </div>
+//         )}
+//       </section>
+//     </>
+//   );
+// }
 
 function CostsTab({ project, cost }) {
   const { dispatch } = useApp();
@@ -283,7 +286,7 @@ function CostsTab({ project, cost }) {
 
   const rows = [
     ['Material', cost.estimated.Material, cost.actual.Material],
-    ['Labor', cost.estimated.Labor, cost.actual.Labor],
+    // ['Labor', cost.estimated.Labor, cost.actual.Labor],
     ['Overhead', cost.estimated.Overhead, cost.actual.Overhead],
   ];
 
@@ -291,6 +294,7 @@ function CostsTab({ project, cost }) {
     <>
       <section className="card">
         <h2 className="card__title">Actual vs. estimated cost</h2>
+        <p className="cost-note">{LABOR_EXCLUDED_NOTE}</p>
         {!cost.estimate && <p className="muted">No estimate has been created for this project yet.</p>}
         <div className="table-wrap">
           <table className="table">
@@ -329,7 +333,6 @@ function CostsTab({ project, cost }) {
 
       <section className="card">
         <h2 className="card__title">Log a material or overhead expense</h2>
-        <p className="muted">Labor cost is calculated automatically from attendance records.</p>
         <form className="inline-form" onSubmit={handleSubmit}>
           <select value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}>
             <option value="Material">Material</option>
@@ -380,11 +383,12 @@ function EstimateTab({ project }) {
         <p className="muted">No estimate created yet.</p>
       ) : (
         versions.map((est) => {
-          const total = est.items.reduce((s, it) => s + estimateItemTotal(it), 0);
+          const items = costItems(est);
+          const total = items.reduce((s, it) => s + estimateItemTotal(it), 0);
           return (
             <details key={est.id} className="estimate-version" open={est === versions[0]}>
               <summary>
-                Version {est.version} — {est.createdDate} — <strong>{formatINR(total)}</strong>
+                Version {est.version} — {formatDMY(est.createdDate)} — <strong>{formatINR(total)}</strong>
               </summary>
               <div className="table-wrap">
                 <table className="table">
@@ -398,7 +402,7 @@ function EstimateTab({ project }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {est.items.map((it) => (
+                    {items.map((it) => (
                       <tr key={it.id}>
                         <td>{it.category}</td>
                         <td>{it.description}</td>

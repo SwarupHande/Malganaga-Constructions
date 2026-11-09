@@ -1,3 +1,5 @@
+const TODAY = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
 export default function Topbar({ title, onMenuClick }) {
   return (
     <header className="topbar">
@@ -6,8 +8,11 @@ export default function Topbar({ title, onMenuClick }) {
           <path d="M3 6h18M3 12h18M3 18h18" />
         </svg>
       </button>
-      <h1 className="topbar__title">{title}</h1>
+      <div className="topbar__heading">
+        <span className="topbar__eyebrow">Malganga Constructions</span>
+        <h1 className="topbar__title">{title}</h1>
+      </div>
+      <span className="topbar__date">{TODAY}</span>
     </header>
   );
 }
-

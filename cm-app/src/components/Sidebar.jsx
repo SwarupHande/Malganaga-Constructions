@@ -5,7 +5,8 @@ const LINKS = [
   { to: '/', label: 'Dashboard', icon: DashboardIcon, end: true },
   { to: '/projects', label: 'Projects', icon: ProjectsIcon },
   { to: '/estimates', label: 'Estimates', icon: EstimatesIcon },
-  { to: '/workers', label: 'Workers', icon: WorkersIcon },
+  // Workers section disabled for now
+  // { to: '/workers', label: 'Workers', icon: WorkersIcon },
   { to: '/reports', label: 'Reports', icon: ReportsIcon },
 ];
 
@@ -19,7 +20,7 @@ export default function Sidebar({ open, onNavigate }) {
     <aside className={`sidebar${open ? ' sidebar--open' : ''}`}>
       <div className="sidebar__brand">
         <span className="sidebar__brand-mark">MC</span>
-        <span className="sidebar__brand-text">Malganaga Constructions</span>
+        <span className="sidebar__brand-text">Malganga Constructions</span>
       </div>
       <nav className="sidebar__nav">
         {LINKS.map(({ to, label, icon: Icon, end }) => (
@@ -79,16 +80,17 @@ function EstimatesIcon() {
     </svg>
   );
 }
-function WorkersIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="9" cy="8" r="3.2" />
-      <path d="M2.5 20c1-3.5 3.6-5.5 6.5-5.5s5.5 2 6.5 5.5" />
-      <circle cx="17.5" cy="8.5" r="2.4" />
-      <path d="M15.8 14.7c2.2.2 4 1.9 4.8 4.8" />
-    </svg>
-  );
-}
+// Workers icon - disabled with the Workers section.
+// function WorkersIcon() {
+//   return (
+//     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+//       <circle cx="9" cy="8" r="3.2" />
+//       <path d="M2.5 20c1-3.5 3.6-5.5 6.5-5.5s5.5 2 6.5 5.5" />
+//       <circle cx="17.5" cy="8.5" r="2.4" />
+//       <path d="M15.8 14.7c2.2.2 4 1.9 4.8 4.8" />
+//     </svg>
+//   );
+// }
 function ReportsIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

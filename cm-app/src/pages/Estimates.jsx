@@ -23,14 +23,17 @@ import {
   latestEstimate,
   estimateTotals,
   estimateItemTotal,
+  costItems,
   formatINR,
   percent,
+  COST_CATEGORIES,
+  LABOR_EXCLUDED_NOTE,
 } from '../utils/costs';
 import { CHART_COLORS, PIE_COLORS, AXIS_TICK, TOOLTIP_STYLE, BAR_RADIUS } from '../utils/chartTheme';
 
 export default function Estimates() {
   const { state } = useApp();
-  const { projects, statuses, workers, attendance, estimates, expenses } = state;
+  const { projects, statuses, estimates, expenses } = state;
 
   const [showBuilder, setShowBuilder] = useState(false);
   const [builderProjectId, setBuilderProjectId] = useState(projects[0]?.id || '');
@@ -38,12 +41,12 @@ export default function Estimates() {
   const rows = useMemo(
     () =>
       projects.map((p) => {
-        const cost = projectCostSummary(p, { attendance, workers, estimates, expenses });
+        const cost = projectCostSummary(p, { estimates, expenses });
         const est = latestEstimate(estimates, p.id);
         const stage = statuses.find((s) => s.id === p.statusId);
         return { project: p, cost, estimate: est, stage };
       }),
-    [projects, statuses, attendance, workers, estimates, expenses]
+    [projects, statuses, estimates, expenses]
   );
 
   const withEstimate = rows.filter((r) => r.estimate);
@@ -58,7 +61,7 @@ export default function Estimates() {
         )
       : 0;
 
-  const portfolioBreakdown = ['Material', 'Labor', 'Overhead'].map((cat) => ({
+  const portfolioBreakdown = COST_CATEGORIES.map((cat) => ({
     name: cat,
     value: Math.round(withEstimate.reduce((s, r) => s + r.cost.estimated[cat], 0)),
   })).filter((d) => d.value > 0);
@@ -78,6 +81,7 @@ export default function Estimates() {
 
   return (
     <div className="page">
+      <p className="cost-note">{LABOR_EXCLUDED_NOTE}</p>
       <div className="stat-grid">
         <StatCard label="Total estimated" value={formatINR(totalEstimated)} />
         <StatCard label="Projects with estimate" value={withEstimate.length} sub={`of ${projects.length} total`} />
@@ -234,7 +238,7 @@ export default function Estimates() {
                       </tr>
                     </thead>
                     <tbody>
-                      {estimate.items.map((it) => (
+                      {costItems(estimate).map((it) => (
                         <tr key={it.id}>
                           <td>{it.category}</td>
                           <td>{it.description}</td>

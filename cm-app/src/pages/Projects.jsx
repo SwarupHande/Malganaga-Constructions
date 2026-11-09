@@ -5,12 +5,12 @@ import Modal from '../components/Modal';
 import ProjectForm from '../components/ProjectForm';
 import StatusManager from '../components/StatusManager';
 import StatusBadge from '../components/StatusBadge';
-import { projectCostSummary, formatINR, percent } from '../utils/costs';
+import { projectCostSummary, formatINR, formatMonthYear, percent } from '../utils/costs';
 import { LOCATIONS } from '../data/seedData';
 
 export default function Projects() {
   const { state } = useApp();
-  const { projects, statuses, workers, attendance, estimates, expenses } = state;
+  const { projects, statuses, estimates, expenses } = state;
 
   const [showNewProject, setShowNewProject] = useState(false);
   const [showStatusManager, setShowStatusManager] = useState(false);
@@ -92,7 +92,7 @@ export default function Projects() {
         <div className="project-grid">
           {filtered.map((project) => {
             const status = statuses.find((s) => s.id === project.statusId);
-            const cost = projectCostSummary(project, { attendance, workers, estimates, expenses });
+            const cost = projectCostSummary(project, { estimates, expenses });
             const pct = percent(cost.actual.grand, project.budget);
             return (
               <Link key={project.id} to={`/projects/${project.id}`} className="project-card">
@@ -106,7 +106,7 @@ export default function Projects() {
                 {project.description && <p className="project-card__desc">{project.description}</p>}
                 <div className="project-card__meta">
                   <span>Manager: {project.manager}</span>
-                  <span>Started {project.startDate}</span>
+                  <span>Started {formatMonthYear(project.startDate)}</span>
                 </div>
                 <div className="project-card__cost">
                   <div className="progress-track">

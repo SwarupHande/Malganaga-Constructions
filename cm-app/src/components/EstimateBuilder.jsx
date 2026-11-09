@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { estimateItemTotal, formatINR } from '../utils/costs';
+import { estimateItemTotal, formatINR, COST_CATEGORIES, LABOR_EXCLUDED_NOTE } from '../utils/costs';
 
-const CATEGORIES = ['Material', 'Labor', 'Overhead'];
+// Labor is left out while worker features are disabled.
+const CATEGORIES = COST_CATEGORIES;
 let rowId = 1;
 function makeRow(category = 'Material') {
   rowId += 1;
@@ -11,7 +12,7 @@ function makeRow(category = 'Material') {
 
 export default function EstimateBuilder({ project, onDone }) {
   const { dispatch } = useApp();
-  const [rows, setRows] = useState([makeRow('Material'), makeRow('Labor'), makeRow('Overhead')]);
+  const [rows, setRows] = useState([makeRow('Material'), /* makeRow('Labor'), */ makeRow('Overhead')]);
 
   function updateRow(key, field, value) {
     setRows((rs) => rs.map((r) => (r.rowKey === key ? { ...r, [field]: value } : r)));
@@ -48,6 +49,7 @@ export default function EstimateBuilder({ project, onDone }) {
 
   return (
     <form className="estimate-builder" onSubmit={handleSubmit}>
+      <p className="cost-note">{LABOR_EXCLUDED_NOTE}</p>
       <div className="table-wrap">
         <table className="table table--estimate">
           <thead>

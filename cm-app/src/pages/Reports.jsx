@@ -8,51 +8,52 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  LineChart,
-  Line,
+  // LineChart, Line - used by the daily labor cost chart, disabled for now
   PieChart,
   Pie,
   Cell,
 } from 'recharts';
 import { useApp } from '../context/AppContext';
-import { projectCostSummary, dailyLaborCostSeries, formatINR } from '../utils/costs';
+import { projectCostSummary, formatINR, COST_CATEGORIES, LABOR_EXCLUDED_NOTE } from '../utils/costs';
 import { CHART_COLORS, PIE_COLORS, AXIS_TICK, TOOLTIP_STYLE, BAR_RADIUS } from '../utils/chartTheme';
 
 export default function Reports() {
   const { state } = useApp();
-  const { projects, workers, attendance, estimates, expenses } = state;
+  const { projects, estimates, expenses } = state;
 
   const [projectId, setProjectId] = useState(projects[0]?.id || '');
   const project = projects.find((p) => p.id === projectId) || projects[0];
 
   const portfolioData = projects.map((p) => {
-    const cost = projectCostSummary(p, { attendance, workers, estimates, expenses });
+    const cost = projectCostSummary(p, { estimates, expenses });
     return { name: shortName(p.name), Budget: p.budget, Actual: Math.round(cost.actual.grand) };
   });
 
   const cost = project
-    ? projectCostSummary(project, { attendance, workers, estimates, expenses })
+    ? projectCostSummary(project, { estimates, expenses })
     : null;
 
   const costVsEstimateData = cost
     ? [
         { name: 'Material', Estimated: Math.round(cost.estimated.Material), Actual: Math.round(cost.actual.Material) },
-        { name: 'Labor', Estimated: Math.round(cost.estimated.Labor), Actual: Math.round(cost.actual.Labor) },
+        // { name: 'Labor', Estimated: Math.round(cost.estimated.Labor), Actual: Math.round(cost.actual.Labor) },
         { name: 'Overhead', Estimated: Math.round(cost.estimated.Overhead), Actual: Math.round(cost.actual.Overhead) },
         { name: 'Total', Estimated: Math.round(cost.estimated.grand), Actual: Math.round(cost.actual.grand) },
       ]
     : [];
 
-  const laborSeries = project ? dailyLaborCostSeries(attendance, workers, project.id) : [];
+  // Daily labor cost chart - disabled along with the worker features.
+  // const laborSeries = project ? dailyLaborCostSeries(attendance, workers, project.id) : [];
 
   const pieData = cost && cost.estimate
-    ? ['Material', 'Labor', 'Overhead']
+    ? COST_CATEGORIES
         .map((cat) => ({ name: cat, value: Math.round(cost.estimated[cat]) }))
         .filter((d) => d.value > 0)
     : [];
 
   return (
     <div className="page">
+      <p className="cost-note">{LABOR_EXCLUDED_NOTE}</p>
       <section className="card">
         <h2 className="card__title">Budget vs. actual cost — all projects</h2>
         <div className="chart-box">
@@ -126,6 +127,7 @@ export default function Reports() {
         </div>
       )}
 
+      {/* Daily labor cost chart - disabled along with the worker features.
       {project && (
         <section className="card">
           <h2 className="card__title">Daily labor cost — {project.name}</h2>
@@ -146,6 +148,7 @@ export default function Reports() {
           )}
         </section>
       )}
+      */}
     </div>
   );
 }

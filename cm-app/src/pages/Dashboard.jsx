@@ -6,11 +6,11 @@ import { projectCostSummary, formatINR, percent } from '../utils/costs';
 
 export default function Dashboard() {
   const { state } = useApp();
-  const { projects, statuses, workers, attendance, estimates, expenses } = state;
+  const { projects, statuses, estimates, expenses } = state;
 
   const summaries = projects.map((p) => ({
     project: p,
-    cost: projectCostSummary(p, { attendance, workers, estimates, expenses }),
+    cost: projectCostSummary(p, { estimates, expenses }),
   }));
 
   const totalBudget = projects.reduce((s, p) => s + p.budget, 0);
@@ -39,7 +39,8 @@ export default function Dashboard() {
           sub={`${percent(totalActual, totalBudget)}% of budget`}
           tone={percent(totalActual, totalBudget) >= 90 ? 'warning' : 'default'}
         />
-        <StatCard label="Workers on roll" value={workers.length} />
+        {/* Workers section disabled for now */}
+        {/* <StatCard label="Workers on roll" value={workers.length} /> */}
       </div>
 
       <div className="dashboard-grid">
