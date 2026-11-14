@@ -112,8 +112,11 @@ export function AppProvider({ children }) {
           return updateDoc(doc(db, 'projects', payload.projectId), { statusId: payload.statusId });
 
         case 'ADD_STATUS': {
+          const taken = state.statuses.some((s) => s.name.trim().toLowerCase() === payload.name.trim().toLowerCase());
+          if (taken) return undefined;
           const status = { id: shortId('st'), name: payload.name, color: payload.color };
-          return setDoc(statusesRef, { list: [...state.statuses, status] });
+          const list = payload.atStart ? [status, ...state.statuses] : [...state.statuses, status];
+          return setDoc(statusesRef, { list });
         }
         case 'REORDER_STATUS': {
           const { index, direction } = payload;

@@ -9,8 +9,11 @@ const CATEGORIES = COST_CATEGORIES;
 let rowId = 1;
 function makeRow(category = 'Material') {
   rowId += 1;
-  return { rowKey: `row-${rowId}`, category, description: '', quantity: '', unitRate: '' };
+  return { rowKey: `row-${rowId}`, category, description: '', unit: '', quantity: '', unitRate: '' };
 }
+
+const isCatalogItem = (category, description) =>
+  (ESTIMATE_CATALOG[category] || []).some((o) => o.name === description);
 
 export default function EstimateBuilder({ project, onDone }) {
   const { dispatch } = useApp();
@@ -18,6 +21,17 @@ export default function EstimateBuilder({ project, onDone }) {
 
   function updateRow(key, field, value) {
     setRows((rs) => rs.map((r) => (r.rowKey === key ? { ...r, [field]: value } : r)));
+  }
+  // A catalogue item from the old category (e.g. "TMT Steel 12mm") doesn't belong in the new one,
+  // so clear it; custom text the user typed is kept.
+  function changeCategory(key, category) {
+    setRows((rs) =>
+      rs.map((r) => {
+        if (r.rowKey !== key) return r;
+        const clear = isCatalogItem(r.category, r.description);
+        return { ...r, category, ...(clear ? { description: '', unit: '' } : {}) };
+      })
+    );
   }
   function addRow() {
     setRows((rs) => [...rs, makeRow('Material')]);
@@ -41,6 +55,7 @@ export default function EstimateBuilder({ project, onDone }) {
       .map((r) => ({
         category: r.category,
         description: r.description.trim(),
+        unit: r.unit.trim(),
         quantity: Number(r.quantity),
         unitRate: Number(r.unitRate) || 0,
       }));
@@ -59,6 +74,7 @@ export default function EstimateBuilder({ project, onDone }) {
               <th>Category</th>
               <th>Description</th>
               <th>Qty</th>
+              <th>Unit</th>
               <th>Unit rate</th>
               <th>Total</th>
               <th />
@@ -68,7 +84,7 @@ export default function EstimateBuilder({ project, onDone }) {
             {rows.map((r) => (
               <tr key={r.rowKey}>
                 <td>
-                  <select value={r.category} onChange={(e) => updateRow(r.rowKey, 'category', e.target.value)}>
+                  <select value={r.category} onChange={(e) => changeCategory(r.rowKey, e.target.value)}>
                     {CATEGORIES.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
@@ -78,6 +94,7 @@ export default function EstimateBuilder({ project, onDone }) {
                   <SuggestInput
                     value={r.description}
                     onChange={(v) => updateRow(r.rowKey, 'description', v)}
+                    onSelect={(o) => updateRow(r.rowKey, 'unit', o.unit || '')}
                     options={ESTIMATE_CATALOG[r.category] || []}
                     placeholder={r.category === 'Overhead' ? 'e.g. Transport charges' : 'Type e.g. cement, steel, sand…'}
                     ariaLabel="Description"
@@ -91,6 +108,16 @@ export default function EstimateBuilder({ project, onDone }) {
                     min="0"
                     value={r.quantity}
                     onChange={(e) => updateRow(r.rowKey, 'quantity', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    className="table__unit-input"
+                    placeholder="Unit"
+                    aria-label="Unit"
+                    value={r.unit}
+                    onChange={(e) => updateRow(r.rowKey, 'unit', e.target.value)}
                   />
                 </td>
                 <td>

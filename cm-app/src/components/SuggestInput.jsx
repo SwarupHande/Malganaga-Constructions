@@ -8,7 +8,8 @@ const OTHER = { name: '__other__', label: 'Other (type your own)' };
 // With `allowOther`, the list ends with "Other"; picking it switches to a plain text box
 // (no suggestions) for items that aren't in the catalogue.
 // The list is portalled to <body> with fixed positioning so scrolling tables/modals can't clip it.
-export default function SuggestInput({ value, onChange, options, placeholder, ariaLabel, allowOther = false }) {
+// `onSelect(option)` is called when a catalogue item is picked, so callers can use its unit.
+export default function SuggestInput({ value, onChange, onSelect, options, placeholder, ariaLabel, allowOther = false }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const [rect, setRect] = useState(null);
@@ -46,6 +47,7 @@ export default function SuggestInput({ value, onChange, options, placeholder, ar
       return;
     }
     onChange(option.name);
+    onSelect?.(option);
   }
 
   function backToList() {

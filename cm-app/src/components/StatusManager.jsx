@@ -7,11 +7,15 @@ export default function StatusManager() {
   const { state, dispatch } = useApp();
   const [name, setName] = useState('');
   const [color, setColor] = useState('blue');
+  const [atStart, setAtStart] = useState(false);
+
+  const trimmed = name.trim();
+  const duplicate = state.statuses.some((s) => s.name.trim().toLowerCase() === trimmed.toLowerCase());
 
   function addStatus(e) {
     e.preventDefault();
-    if (!name.trim()) return;
-    dispatch({ type: 'ADD_STATUS', payload: { name: name.trim(), color } });
+    if (!trimmed || duplicate) return;
+    dispatch({ type: 'ADD_STATUS', payload: { name: trimmed, color, atStart } });
     setName('');
   }
 
@@ -66,8 +70,12 @@ export default function StatusManager() {
             <option key={c} value={c}>{c}</option>
           ))}
         </select>
-        <button type="submit" className="btn btn--primary btn--sm">Add</button>
+        <label className="muted">
+          <input type="checkbox" checked={atStart} onChange={(e) => setAtStart(e.target.checked)} /> Add at start
+        </label>
+        <button type="submit" className="btn btn--primary btn--sm" disabled={!trimmed || duplicate}>Add</button>
       </form>
+      {duplicate && <p className="text-danger status-manager__error">A stage named "{trimmed}" already exists.</p>}
     </div>
   );
 }

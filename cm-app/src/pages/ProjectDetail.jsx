@@ -5,6 +5,8 @@ import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
 // import AttendanceSheet from '../components/AttendanceSheet';
 import EstimateBuilder from '../components/EstimateBuilder';
+import SuggestInput from '../components/SuggestInput';
+import { ESTIMATE_CATALOG } from '../data/materials';
 import {
   projectCostSummary,
   estimateItemTotal,
@@ -379,15 +381,29 @@ function CostsTab({ project, cost }) {
       <section className="card">
         <h2 className="card__title">Log a material or overhead expense</h2>
         <form className="inline-form" onSubmit={handleSubmit}>
-          <select value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}>
+          <select
+            value={form.category}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                category: e.target.value,
+                // A catalogue item from the old category doesn't fit the new one; keep custom text.
+                description: (ESTIMATE_CATALOG[f.category] || []).some((o) => o.name === f.description)
+                  ? ''
+                  : f.description,
+              }))
+            }
+          >
             <option value="Material">Material</option>
             <option value="Overhead">Overhead</option>
           </select>
-          <input
-            type="text"
-            placeholder="e.g. Cement delivery"
+          <SuggestInput
             value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            onChange={(v) => setForm((f) => ({ ...f, description: v }))}
+            options={ESTIMATE_CATALOG[form.category] || []}
+            placeholder={form.category === 'Overhead' ? 'e.g. Transport charges' : 'Type e.g. cement, steel, sand…'}
+            ariaLabel="Expense description"
+            allowOther
           />
           <input
             type="number"
@@ -451,7 +467,7 @@ function EstimateTab({ project }) {
                       <tr key={it.id}>
                         <td>{it.category}</td>
                         <td>{it.description}</td>
-                        <td>{it.quantity}</td>
+                        <td>{it.quantity}{it.unit && <span className="table__unit"> {it.unit}</span>}</td>
                         <td>{formatINR(it.unitRate)}</td>
                         <td>{formatINR(estimateItemTotal(it))}</td>
                       </tr>

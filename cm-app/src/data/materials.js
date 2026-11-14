@@ -1,116 +1,117 @@
 // Suggestions for estimate line-item descriptions, grouped by estimate category.
 // `unit` is shown as a hint; `keywords` are extra search words (synonyms, local Marathi/Hindi names).
 // Order matters: earlier items are shown first when the field is empty and win ties.
+// Anything not listed can still be entered via "Other (type your own)" in the estimate form.
 
 export const ESTIMATE_CATALOG = {
+  // Company material list (Sr. No. 1-70).
   Material: [
-    // Cement & concrete
-    { name: 'Cement OPC 53 grade', unit: 'bag (50 kg)', keywords: 'cement opc' },
-    { name: 'Cement OPC 43 grade', unit: 'bag (50 kg)', keywords: 'cement opc' },
-    { name: 'Cement PPC (Portland Pozzolana)', unit: 'bag (50 kg)', keywords: 'cement ppc' },
-    { name: 'Cement PSC (Portland Slag)', unit: 'bag (50 kg)', keywords: 'cement psc' },
-    { name: 'White cement', unit: 'kg', keywords: 'cement' },
-    { name: 'Ready-mix concrete M20', unit: 'cu.m', keywords: 'rmc concrete' },
-    { name: 'Ready-mix concrete M25', unit: 'cu.m', keywords: 'rmc concrete' },
-    { name: 'Ready-mix concrete M30', unit: 'cu.m', keywords: 'rmc concrete' },
-    { name: 'Concrete admixture (plasticiser)', unit: 'litre', keywords: 'chemical' },
-    { name: 'Curing compound', unit: 'litre', keywords: 'chemical' },
+    // Cement
+    { name: 'Cement OPC', unit: 'Bag', keywords: 'cement opc 53 43' },
+    { name: 'Cement PPC', unit: 'Bag', keywords: 'cement ppc pozzolana' },
 
     // Steel
-    { name: 'TMT steel bars Fe 500 - 8 mm', unit: 'kg', keywords: 'steel rebar sariya saliya rod' },
-    { name: 'TMT steel bars Fe 500 - 10 mm', unit: 'kg', keywords: 'steel rebar sariya saliya rod' },
-    { name: 'TMT steel bars Fe 500 - 12 mm', unit: 'kg', keywords: 'steel rebar sariya saliya rod' },
-    { name: 'TMT steel bars Fe 500 - 16 mm', unit: 'kg', keywords: 'steel rebar sariya saliya rod' },
-    { name: 'TMT steel bars Fe 500 - 20 mm', unit: 'kg', keywords: 'steel rebar sariya saliya rod' },
-    { name: 'TMT steel bars Fe 500D', unit: 'tonne', keywords: 'steel rebar sariya saliya rod' },
-    { name: 'Binding wire', unit: 'kg', keywords: 'steel tying' },
-    { name: 'MS angle / channel', unit: 'kg', keywords: 'steel structural' },
+    { name: 'TMT Steel 8mm', unit: 'Kg', keywords: 'steel rebar sariya saliya rod tmt' },
+    { name: 'TMT Steel 10mm', unit: 'Kg', keywords: 'steel rebar sariya saliya rod tmt' },
+    { name: 'TMT Steel 12mm', unit: 'Kg', keywords: 'steel rebar sariya saliya rod tmt' },
+    { name: 'TMT Steel 16mm', unit: 'Kg', keywords: 'steel rebar sariya saliya rod tmt' },
+    { name: 'TMT Steel 20mm', unit: 'Kg', keywords: 'steel rebar sariya saliya rod tmt' },
+    { name: 'Binding Wire', unit: 'Kg', keywords: 'steel tying tar' },
 
-    // Sand, aggregate, fill
-    { name: 'River sand', unit: 'brass', keywords: 'sand reti vaalu' },
-    { name: 'M-sand (manufactured sand)', unit: 'brass', keywords: 'sand crushed reti' },
-    { name: 'P-sand (plastering sand)', unit: 'brass', keywords: 'sand plaster reti' },
-    { name: 'Aggregate 10 mm', unit: 'brass', keywords: 'khadi gitti stone metal' },
-    { name: 'Aggregate 20 mm', unit: 'brass', keywords: 'khadi gitti stone metal' },
-    { name: 'Aggregate 40 mm', unit: 'brass', keywords: 'khadi gitti stone metal' },
-    { name: 'Murum (filling soil)', unit: 'brass', keywords: 'filling earth soil' },
-    { name: 'Rubble stone (soling)', unit: 'brass', keywords: 'soling dabar stone' },
+    // Sand & aggregate
+    { name: 'River Sand', unit: 'Brass', keywords: 'sand reti vaalu' },
+    { name: 'M-Sand', unit: 'Brass', keywords: 'sand crushed manufactured reti' },
+    { name: 'Plaster Sand', unit: 'Brass', keywords: 'sand p-sand plastering reti' },
+    { name: 'Aggregate 10mm', unit: 'Brass', keywords: 'khadi gitti stone metal' },
+    { name: 'Aggregate 20mm', unit: 'Brass', keywords: 'khadi gitti stone metal' },
+    { name: 'Aggregate 40mm', unit: 'Brass', keywords: 'khadi gitti stone metal' },
+    { name: 'Stone Metal', unit: 'Brass', keywords: 'khadi gitti aggregate soling rubble' },
 
     // Masonry
-    { name: 'Red clay bricks', unit: 'nos', keywords: 'brick vit eent' },
-    { name: 'Fly ash bricks', unit: 'nos', keywords: 'brick vit eent' },
-    { name: 'AAC blocks', unit: 'cu.m', keywords: 'block siporex' },
-    { name: 'Solid concrete blocks', unit: 'nos', keywords: 'block cement' },
-    { name: 'Hollow concrete blocks', unit: 'nos', keywords: 'block cement' },
-    { name: 'Block jointing mortar', unit: 'bag', keywords: 'adhesive aac' },
+    { name: 'Red Bricks', unit: 'Nos.', keywords: 'brick vit eent clay' },
+    { name: 'AAC Blocks', unit: 'Nos.', keywords: 'block siporex' },
+    { name: 'Solid Concrete Blocks', unit: 'Nos.', keywords: 'block cement' },
 
-    // Waterproofing
-    { name: 'Waterproofing compound (integral)', unit: 'litre', keywords: 'waterproof chemical' },
-    { name: 'Waterproofing coating (terrace)', unit: 'litre', keywords: 'waterproof' },
-    { name: 'APP waterproofing membrane', unit: 'sq.m', keywords: 'waterproof' },
-    { name: 'Anti-termite chemical', unit: 'litre', keywords: 'termite pest' },
+    // Water & chemicals
+    { name: 'Water', unit: 'Litres', keywords: 'pani tanker' },
+    { name: 'Waterproofing Chemical', unit: 'Kg / Ltr', keywords: 'waterproof chemical' },
+    { name: 'Concrete Admixture', unit: 'Ltr', keywords: 'chemical plasticiser' },
+
+    // Shuttering & scaffolding
+    { name: 'Shuttering Plywood', unit: 'Sheet', keywords: 'formwork centering ply' },
+    { name: 'Centering Plates', unit: 'Nos.', keywords: 'formwork shuttering' },
+    { name: 'Scaffolding Pipes', unit: 'Nos.', keywords: 'scaffold' },
+    { name: 'Shuttering Oil', unit: 'Ltr', keywords: 'formwork centering' },
+
+    // Paint
+    { name: 'Wall Putty', unit: 'Bag', keywords: 'paint' },
+    { name: 'Wall Primer', unit: 'Ltr', keywords: 'paint' },
+    { name: 'Interior Paint', unit: 'Ltr', keywords: 'paint color colour emulsion' },
+    { name: 'Exterior Paint', unit: 'Ltr', keywords: 'paint color colour emulsion' },
+    { name: 'Enamel Paint', unit: 'Ltr', keywords: 'paint grill door' },
 
     // Flooring & tiling
-    { name: 'Vitrified floor tiles', unit: 'sq.ft', keywords: 'tile flooring' },
-    { name: 'Ceramic wall tiles', unit: 'sq.ft', keywords: 'tile dado' },
-    { name: 'Anti-skid tiles', unit: 'sq.ft', keywords: 'tile bathroom flooring' },
-    { name: 'Granite', unit: 'sq.ft', keywords: 'stone flooring kitchen' },
-    { name: 'Marble', unit: 'sq.ft', keywords: 'stone flooring' },
-    { name: 'Kota stone', unit: 'sq.ft', keywords: 'stone flooring' },
-    { name: 'Shahabad stone', unit: 'sq.ft', keywords: 'stone flooring' },
-    { name: 'Tile adhesive', unit: 'bag', keywords: 'tile' },
-    { name: 'Tile grout', unit: 'kg', keywords: 'tile' },
-
-    // Plaster & finishes
-    { name: 'Gypsum plaster', unit: 'bag', keywords: 'plaster' },
-    { name: 'POP (Plaster of Paris)', unit: 'bag', keywords: 'plaster pop' },
-    { name: 'Wall putty', unit: 'kg', keywords: 'paint' },
-    { name: 'Primer', unit: 'litre', keywords: 'paint' },
-    { name: 'Interior emulsion paint', unit: 'litre', keywords: 'paint color colour' },
-    { name: 'Exterior emulsion paint', unit: 'litre', keywords: 'paint color colour' },
-    { name: 'Texture paint', unit: 'litre', keywords: 'paint color colour plaster' },
-    { name: 'Enamel paint', unit: 'litre', keywords: 'paint grill door' },
-    { name: 'Gypsum board false ceiling', unit: 'sq.ft', keywords: 'ceiling pop' },
-    { name: 'Stone cladding', unit: 'sq.ft', keywords: 'stone cliding elevation' },
-
-    // Doors, windows, railings
-    { name: 'Teak wood door frame', unit: 'nos', keywords: 'door chaukat wood' },
-    { name: 'Flush door', unit: 'nos', keywords: 'door wood' },
-    { name: 'Plywood', unit: 'sq.ft', keywords: 'wood ply' },
-    { name: 'Laminate sheets', unit: 'nos', keywords: 'wood sunmica' },
-    { name: 'UPVC windows', unit: 'sq.ft', keywords: 'window' },
-    { name: 'Aluminium sliding windows', unit: 'sq.ft', keywords: 'window sliding' },
-    { name: 'Toughened glass', unit: 'sq.ft', keywords: 'glass window' },
-    { name: 'MS window grill', unit: 'kg', keywords: 'grill grilling steel' },
-    { name: 'SS railing', unit: 'r.ft', keywords: 'railing steel stainless' },
-    { name: 'MS railing', unit: 'r.ft', keywords: 'railing steel' },
-    { name: 'Door hardware (hinges, locks, handles)', unit: 'set', keywords: 'door' },
-
-    // Electrical
-    { name: 'PVC conduit pipes', unit: 'nos', keywords: 'electrical wiring' },
-    { name: 'Copper wire 1.5 sq.mm', unit: 'coil', keywords: 'electrical wiring cable' },
-    { name: 'Copper wire 2.5 sq.mm', unit: 'coil', keywords: 'electrical wiring cable' },
-    { name: 'Copper wire 4 sq.mm', unit: 'coil', keywords: 'electrical wiring cable' },
-    { name: 'Modular switches & sockets', unit: 'nos', keywords: 'electrical' },
-    { name: 'MCB distribution board', unit: 'nos', keywords: 'electrical db' },
-    { name: 'Light fixtures', unit: 'nos', keywords: 'electrical lights' },
+    { name: 'Vitrified Tiles', unit: 'Sq. Ft.', keywords: 'tile flooring' },
+    { name: 'Ceramic Tiles', unit: 'Sq. Ft.', keywords: 'tile wall dado' },
+    { name: 'Anti-Skid Tiles', unit: 'Sq. Ft.', keywords: 'tile bathroom flooring' },
+    { name: 'Granite', unit: 'Sq. Ft.', keywords: 'stone flooring' },
+    { name: 'Marble', unit: 'Sq. Ft.', keywords: 'stone flooring' },
+    { name: 'Tile Adhesive', unit: 'Bag', keywords: 'tile' },
+    { name: 'Tile Grout', unit: 'Kg', keywords: 'tile' },
 
     // Plumbing & sanitary
-    { name: 'CPVC pipes & fittings', unit: 'r.ft', keywords: 'plumbing water' },
-    { name: 'UPVC pipes & fittings', unit: 'r.ft', keywords: 'plumbing water' },
-    { name: 'PVC SWR drainage pipes', unit: 'r.ft', keywords: 'plumbing drainage' },
-    { name: 'Overhead water tank', unit: 'nos', keywords: 'plumbing tank sintex' },
-    { name: 'Sanitaryware (WC, wash basin)', unit: 'set', keywords: 'plumbing bathroom toilet' },
-    { name: 'CP bath fittings', unit: 'set', keywords: 'plumbing bathroom tap' },
+    { name: 'CPVC Pipes', unit: 'Length', keywords: 'plumbing water pipe' },
+    { name: 'PVC Pipes', unit: 'Length', keywords: 'plumbing pipe' },
+    { name: 'SWR Pipes', unit: 'Length', keywords: 'plumbing drainage pipe' },
+    { name: 'UPVC Pipes', unit: 'Length', keywords: 'plumbing water pipe' },
+    { name: 'Pipe Fittings', unit: 'Nos.', keywords: 'plumbing elbow tee' },
+    { name: 'Water Tank', unit: 'Nos.', keywords: 'plumbing tank sintex' },
+    { name: 'Bathroom Fittings', unit: 'Set', keywords: 'plumbing tap cp bath' },
+    { name: 'Sanitaryware', unit: 'Nos.', keywords: 'plumbing wc toilet wash basin' },
 
-    // Roofing
-    { name: 'Mangalore roof tiles', unit: 'nos', keywords: 'roofing slanting kaul' },
-    { name: 'Metal roofing sheets', unit: 'sq.ft', keywords: 'roofing slanting' },
-    { name: 'Polycarbonate sheets', unit: 'sq.ft', keywords: 'roofing' },
+    // Electrical
+    { name: 'Electrical Wire', unit: 'Coil', keywords: 'electrical wiring cable copper' },
+    { name: 'PVC Conduit', unit: 'Length', keywords: 'electrical wiring pipe' },
+    { name: 'Switches', unit: 'Nos.', keywords: 'electrical sockets modular' },
+    { name: 'MCB', unit: 'Nos.', keywords: 'electrical breaker' },
+    { name: 'Distribution Board', unit: 'Nos.', keywords: 'electrical db' },
+    { name: 'Earthing Materials', unit: 'Set', keywords: 'electrical earth' },
+    { name: 'Light Fittings', unit: 'Nos.', keywords: 'electrical lights fixtures' },
 
-    // Shuttering
-    { name: 'Shuttering plywood', unit: 'sq.ft', keywords: 'formwork centering' },
-    { name: 'Shuttering plates & props (hire)', unit: 'month', keywords: 'formwork centering' },
+    // Doors & windows
+    { name: 'Main Door', unit: 'Nos.', keywords: 'door wood' },
+    { name: 'Internal Doors', unit: 'Nos.', keywords: 'door flush wood' },
+    { name: 'Door Frames', unit: 'Nos.', keywords: 'door chaukat wood' },
+    { name: 'Aluminium Windows', unit: 'Sq. Ft.', keywords: 'window sliding' },
+    { name: 'Glass', unit: 'Sq. Ft.', keywords: 'window toughened' },
+    { name: 'Hinges & Locks', unit: 'Set', keywords: 'door hardware handles' },
+
+    // Railings
+    { name: 'MS Railing', unit: 'Kg', keywords: 'railing steel grill' },
+    { name: 'SS Railing', unit: 'Running Ft.', keywords: 'railing steel stainless' },
+
+    // False ceiling & finishes
+    { name: 'Gypsum Board', unit: 'Sheet', keywords: 'false ceiling' },
+    { name: 'POP', unit: 'Bag', keywords: 'plaster of paris ceiling' },
+    { name: 'False Ceiling Channel', unit: 'Length', keywords: 'ceiling gypsum' },
+    { name: 'Wood Polish', unit: 'Ltr', keywords: 'polish door' },
+
+    // Kitchen
+    { name: 'Kitchen Granite', unit: 'Sq. Ft.', keywords: 'stone platform kitchen' },
+    { name: 'Kitchen Cabinets', unit: 'Running Ft.', keywords: 'kitchen modular' },
+
+    // Roofing, gate, misc
+    { name: 'Roofing Sheets', unit: 'Sq. Ft.', keywords: 'roofing slanting metal' },
+    { name: 'Gate Material', unit: 'Kg', keywords: 'gate steel ms' },
+    { name: 'Anti-Termite Chemical', unit: 'Ltr', keywords: 'termite pest' },
+    { name: 'Curing Compound', unit: 'Ltr', keywords: 'chemical curing' },
+
+    // Extra items for our own stages (not in the Sr. No. 1-70 list)
+    { name: 'Murum', unit: 'Brass', keywords: 'filling soil earth murrum' },
+    { name: 'Rubble Stone', unit: 'Brass', keywords: 'soling dabar stone rubber' },
+    { name: 'Gypsum Plaster', unit: 'Bag', keywords: 'plaster' },
+    { name: 'Texture Paint', unit: 'Ltr', keywords: 'paint color colour texture plaster' },
+    { name: 'Stone Cladding', unit: 'Sq. Ft.', keywords: 'stone cliding elevation' },
   ],
 
   Overhead: [

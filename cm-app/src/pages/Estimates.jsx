@@ -242,7 +242,7 @@ export default function Estimates() {
                         <tr key={it.id}>
                           <td>{it.category}</td>
                           <td>{it.description}</td>
-                          <td>{it.quantity}</td>
+                          <td>{it.quantity}{it.unit && <span className="table__unit"> {it.unit}</span>}</td>
                           <td>{formatINR(it.unitRate)}</td>
                           <td>{formatINR(estimateItemTotal(it))}</td>
                         </tr>

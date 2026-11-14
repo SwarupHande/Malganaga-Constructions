@@ -28,19 +28,22 @@ export function scoreOption(option, rawQuery) {
   if (tokens.length > 1 && tokens.every((t) => all.some((w) => w.startsWith(t)))) return 600;
 
   if (name.includes(query)) return 300;
-  if (query.length >= 3 && isSubsequence(query.replace(/\s+/g, ''), name.replace(/\s+/g, ''))) return 100;
+  if (query.length >= 4 && isSubsequence(query.replace(/\s+/g, ''), name.replace(/\s+/g, ''))) return 100;
   return 0;
 }
 
 // Best matches first; ties keep catalogue order, which lists the common items first.
-// Typo matches (score 100) only appear when nothing matches properly, so they don't add noise.
+// Weaker matches only appear when nothing better exists, so they don't add noise:
+// mid-word hits ("gate" inside "Aggregate", score 300) hide behind word-start matches (500+),
+// and typo matches (100) hide behind any real match.
 export function rankOptions(options, query, limit = 8) {
   const scored = options
     .map((option, index) => ({ option, index, score: scoreOption(option, query) }))
     .filter((r) => r.score > 0);
-  const hasRealMatch = scored.some((r) => r.score > 100);
+  const best = scored.reduce((m, r) => Math.max(m, r.score), 0);
+  const floor = best >= 500 ? 500 : best > 100 ? 101 : 0;
   return scored
-    .filter((r) => !hasRealMatch || r.score > 100)
+    .filter((r) => r.score >= floor)
     .sort((a, b) => b.score - a.score || a.index - b.index)
     .slice(0, limit)
     .map((r) => r.option);
