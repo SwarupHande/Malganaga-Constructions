@@ -10,6 +10,7 @@ import Reports from './pages/Reports';
 import Estimates from './pages/Estimates';
 import Team from './pages/Team';
 import Login from './pages/Login';
+import Loader from './components/Loader';
 import {useAuth} from './context/AuthContext';
 import { useApp } from './context/AppContext';
 
@@ -28,9 +29,9 @@ export default function App() {
   const title = TITLES[location.pathname] || 'Project details';
   const {user, loading} = useAuth();
   const { loading: dataLoading, error, clearError } = useApp();
-  if (loading) return <div className = "login"><p className="muted">Loading...</p></div>;
+  if (loading) return <Loader />;
   if(!user) return <Login />;
-  if (dataLoading) return <div className="login"><p className="muted">Loading project data...</p></div>;
+  if (dataLoading) return <Loader label="Loading project data" />;
   return (
     <div className="app-shell">
       <Sidebar open={sidebarOpen} onNavigate={() => setSidebarOpen(false)} />

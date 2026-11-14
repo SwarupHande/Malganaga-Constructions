@@ -1104,3 +1104,39 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
   letter-spacing: 0.12em;
 }
 .login__card .btn { margin-top: 8px; padding: 12px; }
+
+
+/* ============================================================
+   Loader: three bricks stack up, then reset
+   ============================================================ */
+.loader { flex-direction: column; gap: 18px; }
+.loader__stack { position: relative; width: 64px; height: 26px; }
+.loader__brick {
+  position: absolute;
+  width: 30px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--color-accent);
+  box-shadow: inset 0 -2px 0 var(--color-accent-dark);
+  opacity: 0;
+  animation: loader-drop 1.8s cubic-bezier(0.3, 1.5, 0.6, 1) infinite;
+}
+.loader__brick:nth-child(1) { left: 0; bottom: 0; }
+.loader__brick:nth-child(2) { left: 34px; bottom: 0; animation-delay: 0.2s; }
+.loader__brick:nth-child(3) { left: 17px; bottom: 14px; animation-delay: 0.4s; }
+.loader__text {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+@keyframes loader-drop {
+  0% { opacity: 0; transform: translateY(-18px); }
+  15%, 70% { opacity: 1; transform: none; }
+  85%, 100% { opacity: 0; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loader__brick { animation: none; opacity: 1; }
+}
