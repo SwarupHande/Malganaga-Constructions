@@ -18,6 +18,8 @@ export const DEFAULT_LOCATION = {
 // Ordered construction-stage workflow. Color is a CSS variable suffix (see index.css).
 const STAGE_COLORS = ['gray', 'blue', 'amber', 'indigo', 'teal', 'green', 'red', 'purple'];
 const STAGE_NAMES = [
+  'Planning',
+  'Design',
   'Excavation',
   'Filling',
   'Rubber soling',
