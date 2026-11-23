@@ -7,5 +7,30 @@ service cloud.firestore {
     match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
+
+    // Admin = an admins/{uid} doc exists. Created by hand in the Console; the app can't create admins.
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid; // so the app can check "am I admin?"
+      allow write: if false;
+    }
+
+    // Activity log: users can only add entries about themselves, stamped with the server time.
+    // Only admins can read. Nobody can edit or delete entries.
+    match /activityLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'action', 'summary', 'at'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.at == request.time
+        && request.resource.data.action is string
+        && request.resource.data.summary is string
+        && request.resource.data.summary.size() < 500;
+      allow update, delete: if false;
+    }
   }
 }

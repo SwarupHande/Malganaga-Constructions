@@ -10,9 +10,12 @@ const LINKS = [
   // { to: '/workers', label: 'Workers', icon: WorkersIcon },
   { to: '/reports', label: 'Reports', icon: ReportsIcon },
 ];
+// Only shown to admins (admins/{uid} exists in Firestore).
+const ADMIN_LINKS = [{ to: '/activity', label: 'Activity log', icon: ActivityIcon }];
 
 export default function Sidebar({ open, onNavigate }) {
-  const { user, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
+  const links = isAdmin ? [...LINKS, ...ADMIN_LINKS] : LINKS;
   const email = user?.email ?? '';
   const name = user?.displayName || email.split('@')[0];
   const initial = (name || '?').charAt(0).toUpperCase();
@@ -24,7 +27,7 @@ export default function Sidebar({ open, onNavigate }) {
         <span className="sidebar__brand-text">Malganga Constructions</span>
       </div>
       <nav className="sidebar__nav">
-        {LINKS.map(({ to, label, icon: Icon, end }) => (
+        {links.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
@@ -105,6 +108,14 @@ function ReportsIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M4 20V10M12 20V4M20 20v-7" />
+    </svg>
+  );
+}
+function ActivityIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
     </svg>
   );
 }

@@ -11,6 +11,7 @@ import Estimates from './pages/Estimates';
 import Team from './pages/Team';
 import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
+import Activity from './pages/Activity';
 import Loader from './components/Loader';
 import {useAuth} from './context/AuthContext';
 import { useApp } from './context/AppContext';
@@ -22,6 +23,7 @@ const TITLES = {
   '/estimates': 'Estimates',
   '/team': 'Team',
   '/reports': 'Reports',
+  '/activity': 'Activity log',
 };
 
 export default function App() {
@@ -72,6 +74,7 @@ export default function App() {
             <Route path="/estimates" element={<Estimates />} />
             <Route path="/team" element={<Team />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/activity" element={<Activity />} />
           </Routes>
         </main>
       </div>

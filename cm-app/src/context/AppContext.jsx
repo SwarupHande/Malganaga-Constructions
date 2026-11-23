@@ -14,6 +14,7 @@ import {
 import { db } from '../firebase';
 import { useAuth } from './AuthContext';
 import { DEFAULT_STATUSES } from '../data/seedData';
+import { describeAction, logActivity } from '../utils/activity';
 
 // Each user's data lives in their own folder in Firestore, so every login sees only its own data:
 //   users/{uid}/projects/{id}   - stageManagers: { [statusId]: memberId } is stored on the project
@@ -193,13 +194,21 @@ export function AppProvider({ children }) {
   );
 
   // Same call shape pages already use; failures surface as a banner instead of vanishing.
+  // Every successful change is also recorded in the activity log (no-op actions return undefined).
   const dispatch = useCallback(
-    (action) =>
-      write(action).catch((err) => {
-        console.error(err);
-        setError(`Could not save: ${err.message}`);
-      }),
-    [write]
+    (action) => {
+      const summary = describeAction(action, state); // describe using the data before the change
+      return write(action)
+        .then((result) => {
+          if (result !== undefined) logActivity(user, action.type, summary);
+          return result;
+        })
+        .catch((err) => {
+          console.error(err);
+          setError(`Could not save: ${err.message}`);
+        });
+    },
+    [write, state, user]
   );
 
   const loading = Boolean(user) && SOURCES.some((k) => !loaded.has(k)) && !loadError;
