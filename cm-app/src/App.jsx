@@ -10,6 +10,7 @@ import Reports from './pages/Reports';
 import Estimates from './pages/Estimates';
 import Team from './pages/Team';
 import Login from './pages/Login';
+import ResetPassword from './pages/ResetPassword';
 import Loader from './components/Loader';
 import {useAuth} from './context/AuthContext';
 import { useApp } from './context/AppContext';
@@ -27,10 +28,27 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const title = TITLES[location.pathname] || 'Project details';
-  const {user, loading} = useAuth();
-  const { loading: dataLoading, error, clearError } = useApp();
+  const {user, loading, logout} = useAuth();
+  const { loading: dataLoading, loadError, error, clearError } = useApp();
+  // Password reset link from email: works whether or not someone is signed in.
+  if (location.pathname === '/auth/action') return <ResetPassword />;
   if (loading) return <Loader />;
   if(!user) return <Login />;
+  if (loadError) {
+    // Can't read this account's data (e.g. Firestore rules deny it): nothing to show, so offer sign-out.
+    return (
+      <div className="login">
+        <div className="login__card form">
+          <div className="login__brand">
+            <img className="login__logo" src="/logo-full.png" alt="Malganga Constructions" />
+          </div>
+          <div className="form__error" role="alert">{loadError}</div>
+          <p className="muted">Signed in as {user.email}</p>
+          <button className="btn btn--primary" onClick={logout}>Sign out</button>
+        </div>
+      </div>
+    );
+  }
   if (dataLoading) return <Loader label="Loading project data" />;
   return (
     <div className="app-shell">

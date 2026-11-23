@@ -1104,6 +1104,24 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
   letter-spacing: 0.12em;
 }
 .login__card .btn { margin-top: 8px; padding: 12px; }
+.login__switch {
+  align-self: center;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.form__success {
+  background: var(--color-success-bg);
+  border-left: 3px solid var(--color-success);
+  color: var(--color-success);
+  padding: 10px 14px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
 
 
 /* ============================================================

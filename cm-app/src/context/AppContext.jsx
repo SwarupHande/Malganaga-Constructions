@@ -13,11 +13,12 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from './AuthContext';
+import { DEFAULT_STATUSES } from '../data/seedData';
 
-// App data lives in Firestore:
-//   projects/{id}   - stageManagers: { [statusId]: memberId } is stored on the project
-//   estimates/{id}, expenses/{id}, team/{id}
-//   settings/statuses - { list: [...] } so stage order is kept
+// Each user's data lives in their own folder in Firestore, so every login sees only its own data:
+//   users/{uid}/projects/{id}   - stageManagers: { [statusId]: memberId } is stored on the project
+//   users/{uid}/estimates/{id}, users/{uid}/expenses/{id}, users/{uid}/team/{id}
+//   users/{uid}/settings/statuses - { list: [...] } so stage order is kept
 // Pages still call dispatch({ type, payload }); dispatch now writes to Firestore and the
 // live onSnapshot listeners below push the change back into state (instantly, for local writes).
 
@@ -25,7 +26,6 @@ const AppContext = createContext(null);
 
 const COLLECTIONS = ['projects', 'estimates', 'expenses', 'team'];
 const SOURCES = [...COLLECTIONS, 'statuses'];
-const statusesRef = doc(db, 'settings', 'statuses');
 
 const EMPTY = {
   statuses: [],
@@ -52,21 +52,28 @@ function shortId(prefix) {
 
 export function AppProvider({ children }) {
   const { user } = useAuth();
+  const uid = user?.uid;
+  // Every path points inside the signed-in user's own folder.
+  const col = useCallback((name) => collection(db, 'users', uid, name), [uid]);
+  const ref = useCallback((name, id) => doc(db, 'users', uid, name, id), [uid]);
+  const statusesRef = useMemo(() => (uid ? doc(db, 'users', uid, 'settings', 'statuses') : null), [uid]);
   const [state, setState] = useState(EMPTY);
   const [loaded, setLoaded] = useState(() => new Set());
-  const [error, setError] = useState('');
+  const [error, setError] = useState(''); // save errors: shown as a dismissible banner
+  const [loadError, setLoadError] = useState(''); // can't read data at all: blocks the app
 
   // Subscribe while signed in; drop everything on sign-out.
   useEffect(() => {
     if (!user) {
       setState(EMPTY);
       setLoaded(new Set());
+      setLoadError('');
       return undefined;
     }
     const markLoaded = (key) => setLoaded((s) => (s.has(key) ? s : new Set(s).add(key)));
     const onError = (err) => {
       console.error(err);
-      setError(
+      setLoadError(
         err.code === 'permission-denied'
           ? 'You do not have access to this data. Ask the admin to add your account.'
           : `Could not load data: ${err.message}`
@@ -75,7 +82,7 @@ export function AppProvider({ children }) {
 
     const unsubs = COLLECTIONS.map((name) =>
       onSnapshot(
-        collection(db, name),
+        col(name),
         (snap) => {
           const items = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
           if (SORTERS[name]) items.sort(SORTERS[name]);
@@ -89,27 +96,32 @@ export function AppProvider({ children }) {
       onSnapshot(
         statusesRef,
         (snap) => {
-          setState((s) => ({ ...s, statuses: snap.data()?.list || [] }));
+          if (!snap.exists()) {
+            // First login for this user: give them the default stages.
+            setDoc(statusesRef, { list: DEFAULT_STATUSES }).catch(onError);
+            return;
+          }
+          setState((s) => ({ ...s, statuses: snap.data().list || [] }));
           markLoaded('statuses');
         },
         onError
       )
     );
     return () => unsubs.forEach((u) => u());
-  }, [user]);
+  }, [user, col, statusesRef]);
 
   const write = useCallback(
     async (action) => {
       const { type, payload } = action;
       switch (type) {
         case 'ADD_PROJECT':
-          return addDoc(collection(db, 'projects'), {
+          return addDoc(col('projects'), {
             stageManagers: {},
             ...payload,
             createdAt: serverTimestamp(),
           });
         case 'UPDATE_PROJECT_STATUS':
-          return updateDoc(doc(db, 'projects', payload.projectId), { statusId: payload.statusId });
+          return updateDoc(ref('projects', payload.projectId), { statusId: payload.statusId });
 
         case 'ADD_STATUS': {
           const taken = state.statuses.some((s) => s.name.trim().toLowerCase() === payload.name.trim().toLowerCase());
@@ -136,7 +148,7 @@ export function AppProvider({ children }) {
           const { projectId, items } = payload;
           const existing = state.estimates.filter((e) => e.projectId === projectId);
           const version = existing.length ? Math.max(...existing.map((e) => e.version)) + 1 : 1;
-          return addDoc(collection(db, 'estimates'), {
+          return addDoc(col('estimates'), {
             projectId,
             version,
             createdDate: new Date().toISOString().slice(0, 10),
@@ -145,18 +157,18 @@ export function AppProvider({ children }) {
           });
         }
         case 'ADD_EXPENSE':
-          return addDoc(collection(db, 'expenses'), { ...payload, createdAt: serverTimestamp() });
+          return addDoc(col('expenses'), { ...payload, createdAt: serverTimestamp() });
 
         case 'ADD_MEMBER':
-          return addDoc(collection(db, 'team'), { ...payload, createdAt: serverTimestamp() });
+          return addDoc(col('team'), { ...payload, createdAt: serverTimestamp() });
         case 'REMOVE_MEMBER': {
           // Delete the member and clear them from every stage they manage, all in one batch.
           const batch = writeBatch(db);
-          batch.delete(doc(db, 'team', payload.id));
+          batch.delete(ref('team', payload.id));
           state.projects.forEach((p) => {
             Object.entries(p.stageManagers || {}).forEach(([statusId, memberId]) => {
               if (memberId === payload.id) {
-                batch.update(doc(db, 'projects', p.id), new FieldPath('stageManagers', statusId), deleteField());
+                batch.update(ref('projects', p.id), new FieldPath('stageManagers', statusId), deleteField());
               }
             });
           });
@@ -166,7 +178,7 @@ export function AppProvider({ children }) {
           // FieldPath (not 'stageManagers.st-1') so stage ids are never misread as nested paths.
           const { projectId, statusId, memberId } = payload;
           return updateDoc(
-            doc(db, 'projects', projectId),
+            ref('projects', projectId),
             new FieldPath('stageManagers', statusId),
             memberId || deleteField()
           );
@@ -177,7 +189,7 @@ export function AppProvider({ children }) {
           return undefined;
       }
     },
-    [state]
+    [state, col, ref, statusesRef]
   );
 
   // Same call shape pages already use; failures surface as a banner instead of vanishing.
@@ -190,11 +202,11 @@ export function AppProvider({ children }) {
     [write]
   );
 
-  const loading = Boolean(user) && SOURCES.some((k) => !loaded.has(k)) && !error;
+  const loading = Boolean(user) && SOURCES.some((k) => !loaded.has(k)) && !loadError;
 
   const value = useMemo(
-    () => ({ state, dispatch, loading, error, clearError: () => setError('') }),
-    [state, dispatch, loading, error]
+    () => ({ state, dispatch, loading, loadError, error, clearError: () => setError('') }),
+    [state, dispatch, loading, loadError, error]
   );
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

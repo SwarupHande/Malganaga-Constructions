@@ -1,5 +1,5 @@
 import {createContext, useContext, useEffect, useState} from 'react';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut} from 'firebase/auth';
+import { onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, signOut} from 'firebase/auth';
 import {auth} from '../firebase';
 const AuthContext = createContext(null);
 export function AuthProvider({children}){
@@ -13,8 +13,10 @@ export function AuthProvider({children}){
     },[])
     const login = (email, password) => signInWithEmailAndPassword(auth, email, password);
     const logout= () => signOut(auth);
+    // Firebase emails a link to its own reset page; works even with public sign-up disabled.
+    const resetPassword = (email) => sendPasswordResetEmail(auth, email);
     return(
-        <AuthContext.Provider value = {{user, loading, login, logout}}>
+        <AuthContext.Provider value = {{user, loading, login, logout, resetPassword}}>
             {children}
         </AuthContext.Provider>
     );

@@ -214,4 +214,3 @@ export const SEED_EXPENSES = [
   { id: 'exp-4', projectId: 'p-3', category: 'Material', description: 'Steel bars - full order', amount: 318000, date: '2026-05-02' },
   { id: 'exp-5', projectId: 'p-3', category: 'Material', description: 'Cement - batch 1 & 2', amount: 132000, date: '2026-05-28' },
 ];
-
