@@ -144,7 +144,7 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
 /* ============================================================
    App shell / layout
    ============================================================ */
-.app-shell { display: flex; min-height: 100vh; }
+.app-shell { display: flex; min-height: 100vh; min-height: 100dvh; }
 .app-shell__main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .app-shell__content {
   flex: 1;
@@ -173,6 +173,9 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
   position: sticky;
   top: 0;
   height: 100vh;
+  /* dvh = the height actually visible, so the footer isn't hidden behind the phone browser's bar.
+     Browsers without dvh support keep the 100vh above. */
+  height: 100dvh;
 }
 .sidebar__brand {
   display: flex;
@@ -201,6 +204,9 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
   padding: 18px 12px;
   flex: 1;
   counter-reset: sheet;
+  /* On short screens the links scroll, so Logout always stays visible. */
+  min-height: 0;
+  overflow-y: auto;
 }
 .sidebar__link {
   display: flex;
@@ -242,7 +248,8 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 16px 14px 20px;
+  /* Extra room above the iPhone home bar (env() is 0 everywhere else). */
+  padding: 16px 14px calc(20px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 0.78rem;
   color: rgba(226, 235, 246, 0.55);
@@ -513,9 +520,11 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
 .card__header-row .card__title { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
 
 /* Stats read as one ruled strip rather than four floating tiles */
+/* Wrapping row: works for any number of cards at any width. Cards on the last line grow to
+   fill it, so there is never an empty cell. */
 .stat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 1px;
   min-width: 0;
   background: var(--color-rule);
@@ -525,6 +534,7 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
   box-shadow: var(--shadow-sm);
 }
 .stat-card {
+  flex: 1 1 190px;
   background: var(--color-surface);
   padding: 20px 22px 22px;
   min-width: 0;
@@ -1044,7 +1054,8 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
 }
 
 @media (max-width: 560px) {
-  .stat-grid { grid-template-columns: 1fr 1fr; }
+  /* Two per line on phones; a leftover card stretches across the full line. */
+  .stat-card { flex-basis: 40%; }
   .stat-card { padding: 16px; }
   .stat-card::before { left: 16px; }
   .stat-card__value { font-size: 1.35rem; }
