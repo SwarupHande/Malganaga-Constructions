@@ -18,6 +18,7 @@ import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
 import EstimateBuilder from '../components/EstimateBuilder';
+import EstimateActions from '../components/EstimateActions';
 import {
   projectCostSummary,
   latestEstimate,
@@ -27,7 +28,6 @@ import {
   formatINR,
   percent,
   COST_CATEGORIES,
-  LABOR_EXCLUDED_NOTE,
 } from '../utils/costs';
 import { CHART_COLORS, PIE_COLORS, AXIS_TICK, TOOLTIP_STYLE, BAR_RADIUS } from '../utils/chartTheme';
 
@@ -36,6 +36,7 @@ export default function Estimates() {
   const { projects, statuses, estimates, expenses } = state;
 
   const [showBuilder, setShowBuilder] = useState(false);
+  const [baseEstimate, setBaseEstimate] = useState(null); // set when editing a version
   const [builderProjectId, setBuilderProjectId] = useState(projects[0]?.id || '');
 
   const rows = useMemo(
@@ -72,8 +73,9 @@ export default function Estimates() {
     Estimate: Math.round(r.cost.estimated.grand),
   }));
 
-  function openBuilder(projectId) {
+  function openBuilder(projectId, est = null) {
     setBuilderProjectId(projectId);
+    setBaseEstimate(est);
     setShowBuilder(true);
   }
 
@@ -81,7 +83,6 @@ export default function Estimates() {
 
   return (
     <div className="page">
-      <p className="cost-note">{LABOR_EXCLUDED_NOTE}</p>
       <div className="stat-grid">
         <StatCard label="Total estimated" value={formatINR(totalEstimated)} />
         <StatCard label="Projects with estimate" value={withEstimate.length} sub={`of ${projects.length} total`} />
@@ -226,6 +227,7 @@ export default function Estimates() {
                   {project.name} — {stage?.name} — v{estimate.version} —{' '}
                   <strong>{formatINR(totals.grand)}</strong>
                 </summary>
+                <EstimateActions project={project} estimate={estimate} onEdit={(est) => openBuilder(project.id, est)} />
                 <div className="table-wrap">
                   <table className="table">
                     <thead>
@@ -261,7 +263,12 @@ export default function Estimates() {
       )}
 
       {showBuilder && builderProject && (
-        <Modal title={`New estimate \u2014 ${builderProject.name}`} onClose={() => setShowBuilder(false)} wide>
+        <Modal
+          title={baseEstimate ? `Edit estimate v${baseEstimate.version} \u2014 ${builderProject.name}` : `New estimate \u2014 ${builderProject.name}`}
+          onClose={() => setShowBuilder(false)}
+          wide
+        >
+          {!baseEstimate && (
           <label className="field" style={{ marginBottom: 16 }}>
             <span>Project</span>
             <select
@@ -273,8 +280,11 @@ export default function Estimates() {
               ))}
             </select>
           </label>
+          )}
           <EstimateBuilder
+            key={`${builderProjectId}-${baseEstimate?.id ?? 'new'}`}
             project={projects.find((p) => p.id === builderProjectId) || builderProject}
+            baseEstimate={baseEstimate}
             onDone={() => setShowBuilder(false)}
           />
         </Modal>

@@ -114,6 +114,19 @@ export const ESTIMATE_CATALOG = {
     { name: 'Stone Cladding', unit: 'Sq. Ft.', keywords: 'stone cliding elevation' },
   ],
 
+  Labour: [
+    { name: 'Mason (mistri)', unit: 'day', keywords: 'mason mistri gavandi brick work plaster' },
+    { name: 'Helper / unskilled labour', unit: 'day', keywords: 'helper bigari majdoor mazdoor coolie' },
+    { name: 'Carpenter / shuttering', unit: 'day', keywords: 'carpenter sutar shuttering formwork' },
+    { name: 'Bar bender', unit: 'day', keywords: 'bar bender steel binding fitter' },
+    { name: 'Plumber', unit: 'day', keywords: 'plumber plumbing pipe' },
+    { name: 'Electrician', unit: 'day', keywords: 'electrician wiring electrical' },
+    { name: 'Painter', unit: 'day', keywords: 'painter rangari painting' },
+    { name: 'Tile fitter', unit: 'sq ft', keywords: 'tiles tile fitter flooring' },
+    { name: 'Welder / fabricator', unit: 'day', keywords: 'welder fabrication grill gate' },
+    { name: 'Labour contract (lump sum)', unit: 'lump sum', keywords: 'contract thekedar contractor' },
+  ],
+
   Overhead: [
     { name: 'Transport / freight charges', unit: 'trip', keywords: 'truck tempo delivery' },
     { name: 'JCB / excavator hire', unit: 'hour', keywords: 'equipment machine excavation' },

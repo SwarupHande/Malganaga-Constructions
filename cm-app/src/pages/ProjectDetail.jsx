@@ -5,6 +5,9 @@ import StatusBadge from '../components/StatusBadge';
 import Modal from '../components/Modal';
 // import AttendanceSheet from '../components/AttendanceSheet';
 import EstimateBuilder from '../components/EstimateBuilder';
+import BudgetForm from '../components/BudgetForm';
+import ProjectDetailsForm from '../components/ProjectDetailsForm';
+import EstimateActions from '../components/EstimateActions';
 import SuggestInput from '../components/SuggestInput';
 import { ESTIMATE_CATALOG } from '../data/materials';
 import {
@@ -14,17 +17,20 @@ import {
   formatINR,
   formatDMY,
   percent,
-  LABOR_EXCLUDED_NOTE,
+  COST_CATEGORIES,
+  CATEGORY_HINTS,
+  normalizeCategory,
 } from '../utils/costs';
 import { currentStageManager, stageManagerOf } from '../utils/team';
 
 // Workers & Attendance tab disabled for now
-const TABS = ['Overview', /* 'Workers & Attendance', */ 'Costs', 'Estimate'];
+const TABS = ['Overview', /* 'Workers & Attendance', */ 'Expenses', 'Payments Received', 'Estimate Cost'];
 
 export default function ProjectDetail() {
   const { id } = useParams();
   const { state, dispatch } = useApp();
   const [tab, setTab] = useState(TABS[0]);
+  const [editingBudget, setEditingBudget] = useState(false);
 
   const project = state.projects.find((p) => p.id === id);
 
@@ -45,10 +51,9 @@ export default function ProjectDetail() {
     estimates: state.estimates,
     expenses: state.expenses,
   });
-  const daysElapsed = Math.max(
-    0,
-    Math.round((new Date('2026-08-15') - new Date(project.startDate)) / (1000 * 60 * 60 * 24))
-  );
+  const totalReceived = state.payments
+    .filter((p) => p.projectId === project.id)
+    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
 
   return (
     <div className="page">
@@ -80,13 +85,25 @@ export default function ProjectDetail() {
       </div>
 
       <div className="stat-grid">
-        <MiniStat label="Budget" value={formatINR(project.budget)} />
+        <MiniStat
+          label="Budget"
+          value={formatINR(project.budget)}
+          sub={
+            <button type="button" className="link stat-card__edit" onClick={() => setEditingBudget(true)}>
+              Edit budget
+            </button>
+          }
+        />
         <MiniStat
           label="Actual cost"
           value={formatINR(cost.actual.grand)}
           sub={`${percent(cost.actual.grand, project.budget)}% of budget`}
         />
-        <MiniStat label="Days elapsed" value={daysElapsed} />
+        <MiniStat
+          label="Total payment received"
+          value={formatINR(totalReceived)}
+          sub={`${percent(totalReceived, project.budget)}% of budget`}
+        />
         <MiniStat
           label="Current stage"
           value={<StatusBadge status={status} />}
@@ -108,8 +125,15 @@ export default function ProjectDetail() {
 
       {tab === 'Overview' && <OverviewTab project={project} manager={manager} />}
       {/* {tab === 'Workers & Attendance' && <WorkersTab project={project} />} */}
-      {tab === 'Costs' && <CostsTab project={project} cost={cost} />}
-      {tab === 'Estimate' && <EstimateTab project={project} />}
+      {tab === 'Expenses' && <CostsTab project={project} cost={cost} />}
+      {tab === 'Payments Received' && <PaymentsTab project={project} total={totalReceived} />}
+      {tab === 'Estimate Cost' && <EstimateTab project={project} />}
+
+      {editingBudget && (
+        <Modal title="Edit budget" onClose={() => setEditingBudget(false)}>
+          <BudgetForm project={project} onDone={() => setEditingBudget(false)} />
+        </Modal>
+      )}
     </div>
   );
 }
@@ -126,10 +150,21 @@ function MiniStat({ label, value, sub }) {
 
 function OverviewTab({ project, manager }) {
   const { state } = useApp();
+  const [editing, setEditing] = useState(false);
   return (
     <>
     <section className="card">
-      <h2 className="card__title">Project details</h2>
+      <div className="card__header-row">
+        <h2 className="card__title">Project details</h2>
+        {!editing && (
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => setEditing(true)}>
+            Edit
+          </button>
+        )}
+      </div>
+      {editing ? (
+        <ProjectDetailsForm project={project} onDone={() => setEditing(false)} />
+      ) : (
       <dl className="detail-list">
         <div><dt>Description</dt><dd>{project.description || '\u2014'}</dd></div>
         <div><dt>Stage manager</dt><dd>{manager?.name || 'Unassigned'}</dd></div>
@@ -140,6 +175,7 @@ function OverviewTab({ project, manager }) {
         <div><dt>Village</dt><dd>{project.location.village}</dd></div>
         <div><dt>Budget</dt><dd>{formatINR(project.budget)}</dd></div>
       </dl>
+      )}
     </section>
 
     <section className="card">
@@ -306,24 +342,42 @@ function OverviewTab({ project, manager }) {
 //   );
 // }
 
+// Local date as YYYY-MM-DD (toISOString would give the UTC date, which is wrong before 5:30 AM IST).
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Was this expense typed via "Other" rather than picked from the material list?
+// New entries store the flag; older ones are checked against the list.
+function isOtherItem(expense) {
+  if (typeof expense.isOther === 'boolean') return expense.isOther;
+  return !(ESTIMATE_CATALOG[normalizeCategory(expense.category)] || []).some((o) => o.name === expense.description);
+}
+
 function CostsTab({ project, cost }) {
-  const { dispatch } = useApp();
+  const { state, dispatch } = useApp();
   const [form, setForm] = useState({
     category: 'Material',
     description: '',
     amount: '',
-    date: '2026-08-15',
+    date: todayISO(),
   });
+  // Newest first (state.expenses is already sorted by date).
+  const entries = state.expenses.filter((e) => e.projectId === project.id);
+  const entriesTotal = entries.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
   function handleSubmit(e) {
     e.preventDefault();
     if (!form.description.trim() || !form.amount || Number(form.amount) <= 0) return;
+    const description = form.description.trim();
     dispatch({
       type: 'ADD_EXPENSE',
       payload: {
         projectId: project.id,
         category: form.category,
-        description: form.description.trim(),
+        description,
+        isOther: !(ESTIMATE_CATALOG[form.category] || []).some((o) => o.name === description),
         amount: Number(form.amount),
         date: form.date,
       },
@@ -331,17 +385,101 @@ function CostsTab({ project, cost }) {
     setForm((f) => ({ ...f, description: '', amount: '' }));
   }
 
-  const rows = [
-    ['Material', cost.estimated.Material, cost.actual.Material],
-    // ['Labor', cost.estimated.Labor, cost.actual.Labor],
-    ['Overhead', cost.estimated.Overhead, cost.actual.Overhead],
-  ];
+  const rows = COST_CATEGORIES.map((cat) => [cat, cost.estimated[cat], cost.actual[cat]]);
 
   return (
     <>
       <section className="card">
+        <h2 className="card__title">Add cost</h2>
+        <p className="muted">Log a material, labour or overhead expense for this project.</p>
+        <form className="inline-form" onSubmit={handleSubmit}>
+          <select
+            value={form.category}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                category: e.target.value,
+                // A catalogue item from the old category doesn't fit the new one; keep custom text.
+                description: (ESTIMATE_CATALOG[f.category] || []).some((o) => o.name === f.description)
+                  ? ''
+                  : f.description,
+              }))
+            }
+          >
+            {COST_CATEGORIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <SuggestInput
+            value={form.description}
+            onChange={(v) => setForm((f) => ({ ...f, description: v }))}
+            options={ESTIMATE_CATALOG[form.category] || []}
+            placeholder={CATEGORY_HINTS[form.category]}
+            ariaLabel="Expense description"
+            allowOther
+          />
+          <input
+            type="number"
+            min="0"
+            placeholder="Amount"
+            value={form.amount}
+            onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+          />
+          <input
+            type="date"
+            value={form.date}
+            onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+          />
+          <button type="submit" className="btn btn--primary btn--sm">Add expense</button>
+        </form>
+      </section>
+      <section className="card">
+        <div className="card__header-row">
+          <h2 className="card__title">Cost entries</h2>
+          <span className="muted">{entries.length} {entries.length === 1 ? 'entry' : 'entries'}</span>
+        </div>
+        {entries.length === 0 ? (
+          <p className="muted">No costs added yet. Use “Add cost” above to log the first one.</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Category</th>
+                  <th>Material / item</th>
+                  <th>Cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((e) => (
+                  <tr key={e.id}>
+                    <td style={{ whiteSpace: 'nowrap' }}>{formatDMY(e.date)}</td>
+                    <td>{normalizeCategory(e.category)}</td>
+                    <td>
+                      {isOtherItem(e) ? (
+                        <>
+                          <span className="tag-other">Other</span> {e.description}
+                        </>
+                      ) : (
+                        e.description
+                      )}
+                    </td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{formatINR(e.amount)}</td>
+                  </tr>
+                ))}
+                <tr className="table__row--total">
+                  <td colSpan={3}>Total</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{formatINR(entriesTotal)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="card">
         <h2 className="card__title">Actual vs. estimated cost</h2>
-        <p className="cost-note">{LABOR_EXCLUDED_NOTE}</p>
         {!cost.estimate && <p className="muted">No estimate has been created for this project yet.</p>}
         <div className="table-wrap">
           <table className="table">
@@ -378,33 +516,40 @@ function CostsTab({ project, cost }) {
         </div>
       </section>
 
+    </>
+  );
+}
+
+const PAYMENT_MODES = ['Bank transfer', 'UPI', 'Cheque', 'Cash'];
+
+function PaymentsTab({ project, total }) {
+  const { state, dispatch } = useApp();
+  const [form, setForm] = useState({ amount: '', date: todayISO(), mode: PAYMENT_MODES[0], note: '' });
+  // Newest first (state.payments is already sorted by date).
+  const entries = state.payments.filter((p) => p.projectId === project.id);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!form.amount || Number(form.amount) <= 0) return;
+    dispatch({
+      type: 'ADD_PAYMENT',
+      payload: {
+        projectId: project.id,
+        amount: Number(form.amount),
+        date: form.date,
+        mode: form.mode,
+        note: form.note.trim(),
+      },
+    });
+    setForm((f) => ({ ...f, amount: '', note: '' }));
+  }
+
+  return (
+    <>
       <section className="card">
-        <h2 className="card__title">Log a material or overhead expense</h2>
+        <h2 className="card__title">Record payment</h2>
+        <p className="muted">Log money received from the client for this project.</p>
         <form className="inline-form" onSubmit={handleSubmit}>
-          <select
-            value={form.category}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                category: e.target.value,
-                // A catalogue item from the old category doesn't fit the new one; keep custom text.
-                description: (ESTIMATE_CATALOG[f.category] || []).some((o) => o.name === f.description)
-                  ? ''
-                  : f.description,
-              }))
-            }
-          >
-            <option value="Material">Material</option>
-            <option value="Overhead">Overhead</option>
-          </select>
-          <SuggestInput
-            value={form.description}
-            onChange={(v) => setForm((f) => ({ ...f, description: v }))}
-            options={ESTIMATE_CATALOG[form.category] || []}
-            placeholder={form.category === 'Overhead' ? 'e.g. Transport charges' : 'Type e.g. cement, steel, sand…'}
-            ariaLabel="Expense description"
-            allowOther
-          />
           <input
             type="number"
             min="0"
@@ -417,8 +562,55 @@ function CostsTab({ project, cost }) {
             value={form.date}
             onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
           />
-          <button type="submit" className="btn btn--primary btn--sm">Add expense</button>
+          <select value={form.mode} onChange={(e) => setForm((f) => ({ ...f, mode: e.target.value }))}>
+            {PAYMENT_MODES.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+          <input
+            type="text"
+            placeholder="Note (optional, e.g. cheque no. or instalment)"
+            value={form.note}
+            onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
+          />
+          <button type="submit" className="btn btn--primary btn--sm">Add payment</button>
         </form>
+      </section>
+      <section className="card">
+        <div className="card__header-row">
+          <h2 className="card__title">Payments received</h2>
+          <span className="muted">{entries.length} {entries.length === 1 ? 'payment' : 'payments'}</span>
+        </div>
+        {entries.length === 0 ? (
+          <p className="muted">No payments recorded yet. Use “Record payment” above to log the first one.</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Mode</th>
+                  <th>Note</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((p) => (
+                  <tr key={p.id}>
+                    <td style={{ whiteSpace: 'nowrap' }}>{formatDMY(p.date)}</td>
+                    <td>{p.mode || '—'}</td>
+                    <td>{p.note || '—'}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{formatINR(p.amount)}</td>
+                  </tr>
+                ))}
+                <tr className="table__row--total">
+                  <td colSpan={3}>Total received</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{formatINR(total)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </>
   );
@@ -427,6 +619,11 @@ function CostsTab({ project, cost }) {
 function EstimateTab({ project }) {
   const { state } = useApp();
   const [showBuilder, setShowBuilder] = useState(false);
+  const [baseEstimate, setBaseEstimate] = useState(null); // set when editing a version
+  const openBuilder = (est = null) => {
+    setBaseEstimate(est);
+    setShowBuilder(true);
+  };
   const versions = state.estimates
     .filter((e) => e.projectId === project.id)
     .sort((a, b) => b.version - a.version);
@@ -435,7 +632,7 @@ function EstimateTab({ project }) {
     <section className="card">
       <div className="card__header-row">
         <h2 className="card__title">Estimate versions</h2>
-        <button className="btn btn--primary btn--sm" onClick={() => setShowBuilder(true)}>
+        <button className="btn btn--primary btn--sm" onClick={() => openBuilder()}>
           + New version
         </button>
       </div>
@@ -450,7 +647,9 @@ function EstimateTab({ project }) {
             <details key={est.id} className="estimate-version" open={est === versions[0]}>
               <summary>
                 Version {est.version} — {formatDMY(est.createdDate)} — <strong>{formatINR(total)}</strong>
+                {est.basedOnVersion && <span className="muted"> (edited from v{est.basedOnVersion})</span>}
               </summary>
+              <EstimateActions project={project} estimate={est} onEdit={openBuilder} />
               <div className="table-wrap">
                 <table className="table">
                   <thead>
@@ -481,8 +680,12 @@ function EstimateTab({ project }) {
       )}
 
       {showBuilder && (
-        <Modal title={`New estimate \u2014 ${project.name}`} onClose={() => setShowBuilder(false)} wide>
-          <EstimateBuilder project={project} onDone={() => setShowBuilder(false)} />
+        <Modal
+          title={baseEstimate ? `Edit estimate v${baseEstimate.version} \u2014 ${project.name}` : `New estimate \u2014 ${project.name}`}
+          onClose={() => setShowBuilder(false)}
+          wide
+        >
+          <EstimateBuilder project={project} baseEstimate={baseEstimate} onDone={() => setShowBuilder(false)} />
         </Modal>
       )}
     </section>

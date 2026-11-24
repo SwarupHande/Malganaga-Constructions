@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
+import Modal from '../components/Modal';
 import { projectCostSummary, formatINR, percent } from '../utils/costs';
 import { currentStageManager } from '../utils/team';
 
 export default function Dashboard() {
   const { state } = useApp();
+  const [showAllStages, setShowAllStages] = useState(false);
   const { projects, statuses, estimates, expenses, team } = state;
 
   const summaries = projects.map((p) => ({
@@ -56,22 +59,25 @@ export default function Dashboard() {
           {stageCounts.length === 0 ? (
             <p className="muted">No projects assigned to a stage yet.</p>
           ) : (
-          <div className="status-chart status-chart--scroll">
-            {stageCounts.map(({ status, count }) => (
-              <div key={status.id} className="status-chart__row">
-                <span className="status-chart__label">{status.name}</span>
-                <div className="status-chart__track">
-                  <div
-                    className={`status-chart__bar status-chart__bar--${status.color}`}
-                    style={{ width: `${(count / maxCount) * 100}%` }}
-                  />
-                </div>
-                <span className="status-chart__count">{count}</span>
-              </div>
-            ))}
-          </div>
+            <>
+              <StageChart rows={stageCounts.slice(0, STAGES_ON_CARD)} maxCount={maxCount} />
+              {stageCounts.length > STAGES_ON_CARD && (
+                <button type="button" className="link stage-more" onClick={() => setShowAllStages(true)}>
+                  View all {stageCounts.length} stages &rarr;
+                </button>
+              )}
+            </>
           )}
         </section>
+
+        {showAllStages && (
+          <Modal title="Projects by stage" onClose={() => setShowAllStages(false)}>
+            <StageChart rows={stageCounts} maxCount={maxCount} />
+            <p className="muted stage-more__total">
+              {projects.length} {projects.length === 1 ? 'project' : 'projects'} across {stageCounts.length} stages
+            </p>
+          </Modal>
+        )}
 
         <section className="card">
           <h2 className="card__title">Needs attention</h2>
@@ -134,6 +140,28 @@ export default function Dashboard() {
           </table>
         </div>
       </section>
+    </div>
+  );
+}
+
+// The card shows the first few stages (in workflow order); "View all" opens the full list.
+const STAGES_ON_CARD = 4;
+
+function StageChart({ rows, maxCount }) {
+  return (
+    <div className="status-chart">
+      {rows.map(({ status, count }) => (
+        <div key={status.id} className="status-chart__row">
+          <span className="status-chart__label">{status.name}</span>
+          <div className="status-chart__track">
+            <div
+              className={`status-chart__bar status-chart__bar--${status.color}`}
+              style={{ width: `${(count / maxCount) * 100}%` }}
+            />
+          </div>
+          <span className="status-chart__count">{count}</span>
+        </div>
+      ))}
     </div>
   );
 }

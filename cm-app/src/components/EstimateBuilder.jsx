@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { estimateItemTotal, formatINR, COST_CATEGORIES, LABOR_EXCLUDED_NOTE } from '../utils/costs';
+import { estimateItemTotal, formatINR, COST_CATEGORIES, CATEGORY_HINTS, costItems } from '../utils/costs';
 import { ESTIMATE_CATALOG } from '../data/materials';
 import SuggestInput from './SuggestInput';
 
-// Labor is left out while worker features are disabled.
 const CATEGORIES = COST_CATEGORIES;
 let rowId = 1;
 function makeRow(category = 'Material') {
@@ -15,9 +14,25 @@ function makeRow(category = 'Material') {
 const isCatalogItem = (category, description) =>
   (ESTIMATE_CATALOG[category] || []).some((o) => o.name === description);
 
-export default function EstimateBuilder({ project, onDone }) {
+// Rows pre-filled from an existing estimate version (used by "Edit").
+function rowsFrom(estimate) {
+  return costItems(estimate).map((it) => ({
+    ...makeRow(it.category),
+    description: it.description || '',
+    unit: it.unit || '',
+    quantity: String(it.quantity ?? ''),
+    unitRate: String(it.unitRate ?? ''),
+  }));
+}
+
+// `baseEstimate` (optional): start from this version's items. Saving always creates a NEW version,
+// so the edited version stays in the history.
+export default function EstimateBuilder({ project, onDone, baseEstimate = null }) {
   const { dispatch } = useApp();
-  const [rows, setRows] = useState([makeRow('Material'), /* makeRow('Labor'), */ makeRow('Overhead')]);
+  const [rows, setRows] = useState(() => {
+    const fromBase = baseEstimate ? rowsFrom(baseEstimate) : [];
+    return fromBase.length ? fromBase : [makeRow('Material'), makeRow('Labour'), makeRow('Overhead')];
+  });
 
   function updateRow(key, field, value) {
     setRows((rs) => rs.map((r) => (r.rowKey === key ? { ...r, [field]: value } : r)));
@@ -60,13 +75,24 @@ export default function EstimateBuilder({ project, onDone }) {
         unitRate: Number(r.unitRate) || 0,
       }));
     if (cleanItems.length === 0) return;
-    dispatch({ type: 'ADD_ESTIMATE_VERSION', payload: { projectId: project.id, items: cleanItems } });
+    dispatch({
+      type: 'ADD_ESTIMATE_VERSION',
+      payload: {
+        projectId: project.id,
+        items: cleanItems,
+        ...(baseEstimate ? { basedOnVersion: baseEstimate.version } : {}),
+      },
+    });
     onDone();
   }
 
   return (
     <form className="estimate-builder" onSubmit={handleSubmit}>
-      <p className="cost-note">{LABOR_EXCLUDED_NOTE}</p>
+      {baseEstimate && (
+        <p className="cost-note">
+          Editing version {baseEstimate.version}. Saving creates a new version — version {baseEstimate.version} is kept in the history.
+        </p>
+      )}
       <div className="table-wrap">
         <table className="table table--estimate">
           <thead>
@@ -96,7 +122,7 @@ export default function EstimateBuilder({ project, onDone }) {
                     onChange={(v) => updateRow(r.rowKey, 'description', v)}
                     onSelect={(o) => updateRow(r.rowKey, 'unit', o.unit || '')}
                     options={ESTIMATE_CATALOG[r.category] || []}
-                    placeholder={r.category === 'Overhead' ? 'e.g. Transport charges' : 'Type e.g. cement, steel, sand…'}
+                    placeholder={CATEGORY_HINTS[r.category]}
                     ariaLabel="Description"
                     allowOther
                   />

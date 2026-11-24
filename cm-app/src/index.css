@@ -419,6 +419,27 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
   gap: 12px;
   margin-bottom: 20px;
 }
+.stat-card__edit {
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+.tag-other {
+  display: inline-block;
+  padding: 1px 7px;
+  margin-right: 4px;
+  border: 1px solid var(--color-rule-strong);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  vertical-align: 1px;
+}
+.estimate-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin: 12px 0; }
 .form__actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 6px; }
 .form__saved { color: var(--color-success); font-size: 0.85rem; font-weight: 600; margin-right: auto; }
 
@@ -575,6 +596,17 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
 /* Status chart (dashboard) */
 .status-chart { display: flex; flex-direction: column; gap: 12px; }
 .status-chart--scroll { max-height: 320px; overflow-y: auto; padding-right: 8px; }
+.stage-more {
+  display: inline-block;
+  margin-top: 18px;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.stage-more__total { margin: 18px 0 0; }
 .status-chart__row { display: grid; grid-template-columns: minmax(110px, 150px) 1fr 28px; align-items: center; gap: 14px; }
 .status-chart__label { font-size: 0.84rem; color: var(--color-text); }
 .status-chart__track {
@@ -654,7 +686,7 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
 .table--estimate select { min-width: 100px; }
 .suggest-field { position: relative; display: flex; align-items: center; min-width: 220px; }
 .suggest-field input { flex: 1; }
-.table .suggest-field--custom input[type="text"] { padding-left: 62px; padding-right: 32px; }
+.suggest-field.suggest-field--custom input[type="text"] { padding-left: 62px; padding-right: 32px; }
 .suggest-field__tag {
   position: absolute;
   left: 7px;
@@ -1168,4 +1200,19 @@ input, select, textarea { font-family: inherit; font-size: 0.92rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   .loader__brick { animation: none; opacity: 1; }
+}
+
+/* Custom dropdown chevron so the arrow never collides with the selected text */
+.field select,
+.inline-form select,
+.table select,
+.status-manager__add select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238a8f98' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px 8px;
+  padding-right: 34px;
+  cursor: pointer;
 }

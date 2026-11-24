@@ -103,13 +103,15 @@ src/
   components/              Sidebar, Topbar, forms (Project, Member), EstimateBuilder,
                            StatusManager, SuggestInput (type-ahead), Modal, Loader, ...
   utils/
-    costs.js               Cost calculations, INR formatting, labor-excluded note
+    costs.js               Cost categories, cost calculations, INR formatting
     team.js                Stage-manager lookups
     activity.js            Activity log writer + human-readable action descriptions
+    bomReport.js           Bill of Materials report (letterhead, print / Save as PDF)
     suggest.js             Type-ahead ranking for material suggestions
   data/
     seedData.js            Default stages + sample data
     materials.js           Material suggestions (with units and local names) for estimates
+    company.js             Company details for the report letterhead
     seedFirestore.js       Uploads sample data into one user's folder (not used by the UI)
 ```
 
@@ -121,23 +123,28 @@ src/
 - **Stage managers:** assign a team member to each stage of each project.
 - **Estimates:** versioned estimates with line items, units and material suggestions. Earlier versions
   are kept.
-- **Costs:** Material and Overhead expenses, with actual vs. estimate per category.
+  **Edit** opens a version pre-filled and saves it as a new version. **Download BOM report** opens a
+  Bill of Materials on the company letterhead; the browser's "Save as PDF" downloads it. Letterhead
+  details (phone, email, GSTIN...) are in `src/data/company.js`.
+- **Costs:** Material, Labour and Overhead expenses, with actual vs. estimate per category and a list of every cost entry.
 - **Dashboards and reports:** Recharts charts.
 - **Activity log (admins only):** every change, sign-in and sign-out, with filters by user, action and
   text.
 - **Forgot password:** a link on the login page. Firebase emails a reset link.
 - **Responsive:** the sidebar becomes a drawer on phones.
 
-### Disabled on purpose: workers, attendance and labor cost
+### Disabled on purpose: workers and attendance
 
-Worker allocation, daily attendance and labor cost are **turned off**, not deleted, so they can come
-back later. The code is still there:
+Worker allocation and daily attendance are **turned off**, not deleted, so they can come back later.
+The code is still there:
 
 - `pages/Workers.jsx`, `components/WorkerForm.jsx` and `components/AttendanceSheet.jsx` are unused.
 - The route, sidebar link and project tab are commented out.
-- Costs use only `COST_CATEGORIES = ['Material', 'Overhead']`.
-- A note (`LABOR_EXCLUDED_NOTE`) on the Costs tab, Estimates, Reports and the estimate builder tells
-  users that labor isn't included.
+
+**Labour cost is tracked**, but by hand: it's a normal cost category,
+`COST_CATEGORIES = ['Material', 'Labour', 'Overhead']` in `utils/costs.js`. It isn't calculated
+from attendance. Older data that used the spelling `Labor` is treated as `Labour`
+(`normalizeCategory`).
 
 ---
 

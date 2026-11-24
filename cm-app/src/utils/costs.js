@@ -1,14 +1,27 @@
 // Pure calculation helpers shared across pages. Kept framework-free so they're easy to unit test.
 
-// Worker features are disabled for now, so Labor is left out of every estimate and cost total.
-// To bring it back, add 'Labor' here and uncomment the labor code below.
-export const COST_CATEGORIES = ['Material', 'Overhead'];
-export const LABOR_EXCLUDED_NOTE =
-  'Worker (labor) expenses are excluded from these figures, so the actual project cost may vary.';
+// Cost categories used by estimates, expenses, totals and charts.
+// Labour is entered by hand like the others (worker attendance is still disabled).
+export const COST_CATEGORIES = ['Material', 'Labour', 'Overhead'];
 
-// Estimate line items that count toward totals (drops Labor items from older estimates).
+// Placeholder text for the item box, per category.
+export const CATEGORY_HINTS = {
+  Material: 'Type e.g. cement, steel, sand…',
+  Labour: 'e.g. Mason, helper, carpenter…',
+  Overhead: 'e.g. Transport charges',
+};
+
+// Older data used the US spelling 'Labor'; treat it as 'Labour'.
+export const normalizeCategory = (category) => (category === 'Labor' ? 'Labour' : category);
+
+const emptyTotals = () => Object.fromEntries(COST_CATEGORIES.map((c) => [c, 0]));
+const sumCategories = (totals) => COST_CATEGORIES.reduce((sum, c) => sum + (totals[c] || 0), 0);
+
+// Estimate line items that count toward totals, with old 'Labor' items renamed to 'Labour'.
 export function costItems(estimate) {
-  return (estimate?.items || []).filter((item) => COST_CATEGORIES.includes(item.category));
+  return (estimate?.items || [])
+    .map((item) => ({ ...item, category: normalizeCategory(item.category) }))
+    .filter((item) => COST_CATEGORIES.includes(item.category));
 }
 
 export function estimateItemTotal(item) {
@@ -16,11 +29,11 @@ export function estimateItemTotal(item) {
 }
 
 export function estimateTotals(estimate) {
-  const totals = { Material: 0, Overhead: 0 };
+  const totals = emptyTotals();
   costItems(estimate).forEach((item) => {
     totals[item.category] += estimateItemTotal(item);
   });
-  totals.grand = totals.Material + totals.Overhead;
+  totals.grand = sumCategories(totals);
   return totals;
 }
 
@@ -39,30 +52,23 @@ export function latestEstimate(estimates, projectId) {
 // }
 
 export function actualExpenseTotals(expenses, projectId) {
-  const totals = { Material: 0, Overhead: 0 };
+  const totals = emptyTotals();
   expenses
-    .filter((e) => e.projectId === projectId && COST_CATEGORIES.includes(e.category))
+    .filter((e) => e.projectId === projectId && COST_CATEGORIES.includes(normalizeCategory(e.category)))
     .forEach((e) => {
-      totals[e.category] = (totals[e.category] || 0) + Number(e.amount || 0);
+      totals[normalizeCategory(e.category)] += Number(e.amount || 0);
     });
   return totals;
 }
 
 export function projectCostSummary(project, { estimates, expenses }) {
   const est = latestEstimate(estimates, project.id);
-  const estTotals = est ? estimateTotals(est) : { Material: 0, Overhead: 0, grand: 0 };
-  // const actualLabor = actualLaborCost(attendance, workers, project.id);
+  const estTotals = est ? estimateTotals(est) : { ...emptyTotals(), grand: 0 };
   const actualExp = actualExpenseTotals(expenses, project.id);
-  const actualTotal = actualExp.Material + actualExp.Overhead;
   return {
     estimate: est,
     estimated: estTotals,
-    actual: {
-      Material: actualExp.Material,
-      // Labor: actualLabor,
-      Overhead: actualExp.Overhead,
-      grand: actualTotal,
-    },
+    actual: { ...actualExp, grand: sumCategories(actualExp) },
   };
 }
 

@@ -10,7 +10,7 @@ export const CHART_COLORS = {
 
 export const PIE_COLORS = {
   Material: CHART_COLORS.primary,
-  Labor: CHART_COLORS.accent,
+  Labour: CHART_COLORS.accent,
   Overhead: CHART_COLORS.teal,
 };
 

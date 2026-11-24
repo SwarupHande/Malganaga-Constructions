@@ -14,7 +14,7 @@ import {
   Cell,
 } from 'recharts';
 import { useApp } from '../context/AppContext';
-import { projectCostSummary, formatINR, COST_CATEGORIES, LABOR_EXCLUDED_NOTE } from '../utils/costs';
+import { projectCostSummary, formatINR, COST_CATEGORIES } from '../utils/costs';
 import { CHART_COLORS, PIE_COLORS, AXIS_TICK, TOOLTIP_STYLE, BAR_RADIUS } from '../utils/chartTheme';
 
 export default function Reports() {
@@ -35,9 +35,11 @@ export default function Reports() {
 
   const costVsEstimateData = cost
     ? [
-        { name: 'Material', Estimated: Math.round(cost.estimated.Material), Actual: Math.round(cost.actual.Material) },
-        // { name: 'Labor', Estimated: Math.round(cost.estimated.Labor), Actual: Math.round(cost.actual.Labor) },
-        { name: 'Overhead', Estimated: Math.round(cost.estimated.Overhead), Actual: Math.round(cost.actual.Overhead) },
+        ...COST_CATEGORIES.map((cat) => ({
+          name: cat,
+          Estimated: Math.round(cost.estimated[cat]),
+          Actual: Math.round(cost.actual[cat]),
+        })),
         { name: 'Total', Estimated: Math.round(cost.estimated.grand), Actual: Math.round(cost.actual.grand) },
       ]
     : [];
@@ -53,7 +55,6 @@ export default function Reports() {
 
   return (
     <div className="page">
-      <p className="cost-note">{LABOR_EXCLUDED_NOTE}</p>
       <section className="card">
         <h2 className="card__title">Budget vs. actual cost — all projects</h2>
         <div className="chart-box">

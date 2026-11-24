@@ -19,13 +19,14 @@ import { describeAction, logActivity } from '../utils/activity';
 // Each user's data lives in their own folder in Firestore, so every login sees only its own data:
 //   users/{uid}/projects/{id}   - stageManagers: { [statusId]: memberId } is stored on the project
 //   users/{uid}/estimates/{id}, users/{uid}/expenses/{id}, users/{uid}/team/{id}
+//   users/{uid}/payments/{id}   - money received from the client: { projectId, amount, date, mode, note }
 //   users/{uid}/settings/statuses - { list: [...] } so stage order is kept
 // Pages still call dispatch({ type, payload }); dispatch now writes to Firestore and the
 // live onSnapshot listeners below push the change back into state (instantly, for local writes).
 
 const AppContext = createContext(null);
 
-const COLLECTIONS = ['projects', 'estimates', 'expenses', 'team'];
+const COLLECTIONS = ['projects', 'estimates', 'expenses', 'payments', 'team'];
 const SOURCES = [...COLLECTIONS, 'statuses'];
 
 const EMPTY = {
@@ -33,6 +34,7 @@ const EMPTY = {
   projects: [],
   estimates: [],
   expenses: [],
+  payments: [],
   team: [],
   // Worker features are disabled; kept empty so any leftover reads don't crash.
   workers: [],
@@ -44,6 +46,7 @@ const EMPTY = {
 const SORTERS = {
   projects: (a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0) || a.id.localeCompare(b.id),
   expenses: (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0),
+  payments: (a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0),
   team: (a, b) => a.name.localeCompare(b.name),
 };
 
@@ -121,6 +124,17 @@ export function AppProvider({ children }) {
             ...payload,
             createdAt: serverTimestamp(),
           });
+        case 'UPDATE_PROJECT':
+          return updateDoc(ref('projects', payload.projectId), {
+            ...payload.changes,
+            ...('budget' in payload.changes ? { budgetUpdatedAt: serverTimestamp() } : {}),
+            updatedAt: serverTimestamp(),
+          });
+        case 'UPDATE_PROJECT_BUDGET':
+          return updateDoc(ref('projects', payload.projectId), {
+            budget: payload.budget,
+            budgetUpdatedAt: serverTimestamp(),
+          });
         case 'UPDATE_PROJECT_STATUS':
           return updateDoc(ref('projects', payload.projectId), { statusId: payload.statusId });
 
@@ -154,11 +168,14 @@ export function AppProvider({ children }) {
             version,
             createdDate: new Date().toISOString().slice(0, 10),
             items: items.map((it, i) => ({ ...it, id: `ei-${i + 1}` })),
+            ...(payload.basedOnVersion ? { basedOnVersion: payload.basedOnVersion } : {}),
             createdAt: serverTimestamp(),
           });
         }
         case 'ADD_EXPENSE':
           return addDoc(col('expenses'), { ...payload, createdAt: serverTimestamp() });
+        case 'ADD_PAYMENT':
+          return addDoc(col('payments'), { ...payload, createdAt: serverTimestamp() });
 
         case 'ADD_MEMBER':
           return addDoc(col('team'), { ...payload, createdAt: serverTimestamp() });
